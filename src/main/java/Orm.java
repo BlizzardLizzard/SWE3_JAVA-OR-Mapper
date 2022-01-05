@@ -1,6 +1,8 @@
 import annotations.Table;
 import lombok.Getter;
 import lombok.Setter;
+import metamodel.__Field;
+import metamodel.__Row;
 import metamodel.__Table;
 
 import java.lang.reflect.Field;
@@ -24,50 +26,27 @@ public final class Orm {
 
     public static void save(Object obj) throws SQLException {
         connect();
-        __Table table = new __Table(Test.class);
-        if(obj.getClass().isAnnotationPresent(annotations.Table.class) && !Objects.equals(obj.getClass().getAnnotation(Table.class).tableName(), "")){
-            table.set_tableName(obj.getClass().getAnnotation(annotations.Table.class).tableName());
-        } else {
-            table.set_tableName(obj.getClass().getSimpleName());
-        }
-        ArrayList<Object> fieldNames = new ArrayList<>();
-        ArrayList<Object> fields = new ArrayList<>();
-
-        for(Field name : obj.getClass().getDeclaredFields()){
-            if(name.isAnnotationPresent(annotations.Field.class) && !name.isAnnotationPresent(annotations.PrimaryKey.class)){
-                name.setAccessible(true);
-                fieldNames.add(name.getName());
-                try {
-                    // get value of field
-                    Object value = name.get(obj);
-                    fields.add(value);
-                    System.out.println(value);
-                } catch (IllegalAccessException e) {
-                    e.printStackTrace();
-                }
-                //print name of field
-                System.out.println(name.getName());
-            }
-        }
-        System.out.println(fieldNames);
-        System.out.println(fields);
+        __Table table = new __Table(obj);
+        table.get_rows().set_table(table);
 
        StringBuilder insertQuery = new StringBuilder("INSERT INTO " + table.get_tableName() + " (");
 
-       boolean firstRow = true;
-        for(Object fieldName : fieldNames){
-            if(firstRow) {
-                firstRow = false;
-            } else {
-                insertQuery.append(", ");
-            }
-            insertQuery.append(fieldName.toString());
-        }
+       boolean first = true;
+       for(__Field field : table.get_rows().getFields()){
+           if(field.is_primaryKey()){continue;}
+           if(first){
+               first = false;
+           } else {
+               insertQuery.append(", ");
+           }
+           insertQuery.append(field.get_fieldName());
+       }
         insertQuery.append(") VALUES (");
 
         boolean firstItem = true;
-        for(Object field : fields){
-            if(firstItem) {
+        for(__Field field : table.get_rows().getFields()){
+            if(field.is_primaryKey()){continue;}
+            if(firstItem){
                 firstItem = false;
             } else {
                 insertQuery.append(", ");
@@ -79,8 +58,9 @@ public final class Orm {
         System.out.println(insertQuery);
 
         int index = 1;
-        for(Object items : fields){
-            ps.setString(index++, items.toString());
+        for(__Field field : table.get_rows().getFields()){
+            if(field.is_primaryKey()){continue;}
+            ps.setString(index++, field.get_field());
         }
         ps.execute();
         ps.close();
@@ -89,56 +69,26 @@ public final class Orm {
     public static void update(Object obj) throws SQLException {
         connect();
         StringBuilder updateQuery = new StringBuilder("UPDATE " + obj.getClass().getAnnotation(annotations.Table.class).tableName() + " SET ");
-        HashMap<Object, Object> pairs = new HashMap<>();
-        HashMap<Object, Object> primaryKeys = new HashMap<>();
-        Object fieldName = "";
+        __Table table = new __Table(obj);
+        table.get_rows().set_table(table);
+        __Field primaryKey = null;
 
-        for(Field name : obj.getClass().getDeclaredFields()){
-            if(name.isAnnotationPresent(annotations.Field.class)) {
-                name.setAccessible(true);
-                fieldName = name.getName();
-                if (!name.isAnnotationPresent(annotations.PrimaryKey.class)) {
-                    try {
-                        // get value of field
-                        pairs.put(fieldName, name.get(obj));
-                        System.out.println(pairs);
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
-                    //print name of field
-                    System.out.println(name.getName());
-                } else {
-                    try {
-                        primaryKeys.put(fieldName, name.get(obj));
-                        System.out.println(primaryKeys);
-                    } catch (IllegalAccessException e) {
-                        e.printStackTrace();
-                    }
-                }
+        boolean first = true;
+        for(__Field field : table.get_rows().getFields()){
+            if(field.is_primaryKey()){
+                primaryKey = field;
+                continue;
             }
-        }
-
-        boolean firstItem = true;
-        for(Object fieldKey : pairs.keySet()){
-            if(firstItem) {
-                firstItem = false;
+            if(first){
+                first = false;
             } else {
                 updateQuery.append(", ");
             }
-            updateQuery.append(fieldKey).append(" = ").append("'" + pairs.get(fieldKey) + "'");
+            updateQuery.append(field.get_fieldName() + " = '" + field.get_field() + "'");
         }
 
         updateQuery.append(" WHERE ");
-
-        boolean firstPrimaryKey = true;
-        for(Object fieldKey : primaryKeys.keySet()){
-            if(firstPrimaryKey) {
-                firstPrimaryKey = false;
-            } else {
-                updateQuery.append(", ");
-            }
-            updateQuery.append(fieldKey).append(" = ").append(primaryKeys.get(fieldKey));
-        }
+        updateQuery.append(primaryKey.get_fieldName()).append(" = ").append(primaryKey.get_field());
         System.out.println(updateQuery);
         PreparedStatement ps = get_connection().prepareStatement(updateQuery.toString());
         ps.execute();
@@ -168,13 +118,5 @@ public final class Orm {
             e.printStackTrace();
         }
         return null;
-    }
-
-    public static void __getAllColumns(String tableName) throws SQLException {
-        String tableQuery = "SELECT * FROM " + tableName;
-        ResultSet result = get_connection().prepareStatement(tableQuery).executeQuery();
-        while(result.next()){
-            System.out.println(result.getString(2));
-        }
     }
 }

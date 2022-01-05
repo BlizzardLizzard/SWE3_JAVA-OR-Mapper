@@ -1,18 +1,18 @@
 package metamodel;
 
+import annotations.PrimaryKey;
 import annotations.Table;
 import lombok.Getter;
 import lombok.Setter;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Locale;
+import java.util.*;
 
 public class __Table {
-    /** Primary key */
-    private __Column _primaryKey;
 
+    @Getter
     private Class _class;
 
     @Getter
@@ -20,24 +20,34 @@ public class __Table {
     private String _tableName;
 
     @Getter
-    private __Column[] _columns;
+    @Setter
+    private __Row _rows;
 
 
-    public __Table(Class cls){
-        Table table = (Table) cls.getAnnotation(Table.class);
-        if((table == null) || (table.tableName().equals(""))){
-            _tableName = cls.getSimpleName().toUpperCase(Locale.ROOT);
-        } else { _tableName = table.tableName(); }
-        _class = cls;
-
-        ArrayList<__Column> fields = new ArrayList<>();
-    }
-
-    private ArrayList<Method> _getMethods(Class cls){
-        ArrayList<Method> methods = new ArrayList<>();
-
-        methods.addAll(Arrays.asList(cls.getDeclaredMethods()));
-
-        return methods;
+    public __Table(Object obj) {
+        _class = obj.getClass();
+        Table table = (Table) _class.getAnnotation(Table.class);
+        if ((table == null) || (table.tableName().equals(""))) {
+            _tableName = _class.getSimpleName().toUpperCase(Locale.ROOT);
+        } else {
+            _tableName = table.tableName();
+        }
+        HashMap<Object, Object> pairs = new HashMap<>();
+        String fieldName;
+        for (Field name : _class.getDeclaredFields()) {
+            if (name.isAnnotationPresent(annotations.Field.class)) {
+                name.setAccessible(true);
+                fieldName = name.getName();
+                    // get value of field
+                    try {
+                        //TODO: Make it work with only the class
+                        pairs.put(fieldName, name.get(obj));
+                    } catch (IllegalAccessException e) {
+                        e.printStackTrace();
+                    }
+                    System.out.println(pairs);
+            }
+        }
+        _rows = new __Row(pairs, _class);
     }
 }

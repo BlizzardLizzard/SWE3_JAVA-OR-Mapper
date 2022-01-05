@@ -14,8 +14,9 @@ public class Main {
     public String test;
 
     public static void main(String[] args) throws SQLException {
-        Main m = (Main) Orm.getObject(Main.class, "10");
-        m.test = "update";
+        Main m = (Main) Orm.getObject(Main.class, "13");
+        System.out.println(m.test);
+        m.test = "test";
         Orm.update(m);
     }
 }
