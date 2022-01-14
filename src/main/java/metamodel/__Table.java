@@ -23,7 +23,6 @@ public class __Table {
     @Setter
     private __Row _rows;
 
-
     public __Table(Object obj) {
         _class = obj.getClass();
         Table table = (Table) _class.getAnnotation(Table.class);
@@ -34,13 +33,14 @@ public class __Table {
         }
         HashMap<Object, Object> pairs = new HashMap<>();
         String fieldName;
+        System.out.println(Arrays.toString(_class.getDeclaredFields()));
         for (Field name : _class.getDeclaredFields()) {
             if (name.isAnnotationPresent(annotations.Field.class)) {
                 name.setAccessible(true);
                 fieldName = name.getName();
+                //fieldName = name.getAnnotation(annotations.Field.class).fieldName();
                     // get value of field
                     try {
-                        //TODO: Make it work with only the class
                         pairs.put(fieldName, name.get(obj));
                     } catch (IllegalAccessException e) {
                         e.printStackTrace();

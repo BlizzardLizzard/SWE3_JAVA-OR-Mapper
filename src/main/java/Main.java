@@ -1,8 +1,7 @@
-import annotations.Field;
-import annotations.PrimaryKey;
-import annotations.Table;
+import annotations.*;
 
 import java.sql.SQLException;
+import java.util.HashSet;
 
 @Table(tableName = "test")
 public class Main {
@@ -13,10 +12,14 @@ public class Main {
     @Field(fieldName = "test")
     public String test;
 
+    @OneToMany(tableName = "student")
+    public Student[] students;
+
     public static void main(String[] args) throws SQLException {
-        Main m = (Main) Orm.getObject(Main.class, "13");
-        System.out.println(m.test);
-        m.test = "test";
-        Orm.update(m);
+        Main m = (Main) Orm.getObject(Main.class, "1");
+        Student student = new Student();
+        student.name = "jakob";
+        student.test = m;
+        Orm.save(student);
     }
 }

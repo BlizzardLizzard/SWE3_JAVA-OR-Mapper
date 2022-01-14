@@ -1,3 +1,4 @@
+import annotations.PrimaryKey;
 import annotations.Table;
 import lombok.Getter;
 import lombok.Setter;
@@ -5,6 +6,7 @@ import metamodel.__Field;
 import metamodel.__Row;
 import metamodel.__Table;
 
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
@@ -39,7 +41,7 @@ public final class Orm {
            } else {
                insertQuery.append(", ");
            }
-           insertQuery.append(field.get_fieldName());
+           insertQuery.append(field.get_tableFieldName());
        }
         insertQuery.append(") VALUES (");
 
@@ -60,7 +62,22 @@ public final class Orm {
         int index = 1;
         for(__Field field : table.get_rows().getFields()){
             if(field.is_primaryKey()){continue;}
-            ps.setString(index++, field.get_field());
+            if(field.is_foreignKey()) {
+                //TODO: change student to studenid -> int
+                try {
+                    Object fkObj = obj.getClass().getField(field.get_fieldName()).get(obj);
+                    for(Field fieldFK : fkObj.getClass().getFields()){
+                        if(fieldFK.isAnnotationPresent(annotations.PrimaryKey.class)){
+                            fieldFK.setAccessible(true);
+                            ps.setString(index++, fieldFK.get(fkObj).toString());
+                        }
+                    }
+                } catch (IllegalAccessException | NoSuchFieldException e) {
+                    e.printStackTrace();
+                }
+            } else {
+                ps.setString(index++, field.get_field());
+            }
         }
         ps.execute();
         ps.close();

@@ -25,8 +25,14 @@ public class __Row {
         _pairs = pairs;
         fields = new HashSet<>();
         for(Object key : pairs.keySet()){
-            __Field field = new __Field(key.toString(), pairs.get(key).toString(), cls);
-            fields.add(field);
+            try {
+                if(!cls.getDeclaredField(key.toString()).isAnnotationPresent(annotations.PrimaryKey.class)) {
+                    __Field field = new __Field(key.toString(), pairs.get(key).toString(), cls);
+                    fields.add(field);
+                }
+            } catch (NoSuchFieldException e) {
+                e.printStackTrace();
+            }
         }
     }
 

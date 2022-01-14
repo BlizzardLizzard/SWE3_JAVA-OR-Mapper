@@ -10,6 +10,10 @@ public class __Field {
 
     @Getter
     @Setter
+    private String _tableFieldName;
+
+    @Getter
+    @Setter
     private String _field;
 
     @Getter
@@ -27,9 +31,18 @@ public class __Field {
     public __Field(String fieldName, String field, Class cls) {
         _fieldName = fieldName;
         _field = field;
+        _type = cls;
+        try {
+            _tableFieldName = cls.getDeclaredField(fieldName).getAnnotation(annotations.Field.class).fieldName();
+        } catch (NoSuchFieldException e) {
+            e.printStackTrace();
+        }
         try {
             if(cls.getDeclaredField(fieldName).isAnnotationPresent(annotations.PrimaryKey.class)){
                 _primaryKey = true;
+            }if(cls.getDeclaredField(fieldName).isAnnotationPresent(annotations.ForeignKey.class)){
+                _foreignKey = true;
+                _type = cls.getDeclaredField(fieldName).getAnnotation(annotations.ForeignKey.class).foreignClass();
             }
         } catch (NoSuchFieldException e) {
             e.printStackTrace();
