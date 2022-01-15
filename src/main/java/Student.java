@@ -12,7 +12,7 @@ public class Student {
     @Field(fieldName = "name")
     public String name;
 
-    @Field(fieldName = "testid")
     @ForeignKey(fKTableName = "test", foreignClass = Main.class)
+    @Field(fieldName = "testid")
     public Main test;
 }

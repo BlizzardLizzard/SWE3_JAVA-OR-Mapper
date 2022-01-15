@@ -1,16 +1,15 @@
-import annotations.PrimaryKey;
 import annotations.Table;
 import lombok.Getter;
 import lombok.Setter;
 import metamodel.__Field;
-import metamodel.__Row;
 import metamodel.__Table;
 
-import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
 
 public final class Orm {
     private static final HashMap<Class, __Table> _tables = new HashMap<>();
@@ -112,7 +111,7 @@ public final class Orm {
         ps.close();
     }
 
-    public static Object getObject(Class cls, String primaryKey) throws SQLException {
+    public static Object getObject(Class cls, String primaryKey, boolean onlyFields) throws SQLException {
         String getObjectQuery = "SELECT * FROM " + ((Table) cls.getAnnotation(annotations.Table.class)).tableName() + " WHERE id = " + primaryKey;
         connect();
         ResultSet result = get_connection().prepareStatement(getObjectQuery).executeQuery();
@@ -126,6 +125,9 @@ public final class Orm {
                         Object value = result.getObject(fieldAnnotation.fieldName());
                         field.set(obj, value);
                     }
+                    if(field.isAnnotationPresent(annotations.OneToMany.class) && onlyFields){
+                         field.set(obj, getOneToMany(obj, field));
+                    }
                 }
                 return obj;
             } catch (NoSuchMethodException e) {
@@ -135,5 +137,39 @@ public final class Orm {
             e.printStackTrace();
         }
         return null;
+    }
+
+    private static ArrayList<Object> getOneToMany(Object obj, Field field) {
+        ArrayList<Object> arrayListMany = new ArrayList<>();
+        __Table table = new __Table(obj);
+        table.get_rows().set_table(table);
+        String getObjetsForObject = "SELECT * FROM " + field.getAnnotation(annotations.OneToMany.class).tableName() + " WHERE " + field.getAnnotation(annotations.OneToMany.class).foreignKeyName() + " = '" + table.get_rows().getPrimaryKeyField().get_field() + "'";
+        try {
+            Class manyObject = field.getAnnotation(annotations.OneToMany.class).classObject();
+            field.setAccessible(true);
+            ResultSet result = get_connection().prepareStatement(getObjetsForObject).executeQuery();
+            while (result.next()) {
+                Object tmp = field.getAnnotation(annotations.OneToMany.class).classObject().getConstructor().newInstance();
+                for (Field fieldResult : manyObject.getFields()) {
+                    annotations.Field fieldAnnotation = fieldResult.getAnnotation(annotations.Field.class);
+                    if(fieldAnnotation != null) {
+                        if (fieldResult.isAnnotationPresent(annotations.PrimaryKey.class)) {
+                            fieldResult.set(tmp, result.getObject(fieldAnnotation.fieldName()));
+                        }else {
+                            if (fieldResult.isAnnotationPresent(annotations.ForeignKey.class)) {
+                                Object fkObject = getObject(fieldResult.getAnnotation(annotations.ForeignKey.class).foreignClass(), (String) result.getObject(fieldAnnotation.fieldName()), false);
+                                fieldResult.set(tmp, fkObject);
+                            } else {
+                                fieldResult.set(tmp, result.getObject(fieldAnnotation.fieldName()));
+                            }
+                        }
+                    }
+                }
+                arrayListMany.add(tmp);
+            }
+        } catch (IllegalAccessException | SQLException | NoSuchMethodException | InvocationTargetException | InstantiationException e) {
+            e.printStackTrace();
+        }
+        return arrayListMany;
     }
 }

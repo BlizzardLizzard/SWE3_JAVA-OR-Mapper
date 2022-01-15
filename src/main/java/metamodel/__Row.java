@@ -25,15 +25,20 @@ public class __Row {
         _pairs = pairs;
         fields = new HashSet<>();
         for(Object key : pairs.keySet()){
-            try {
-                if(!cls.getDeclaredField(key.toString()).isAnnotationPresent(annotations.PrimaryKey.class)) {
-                    __Field field = new __Field(key.toString(), pairs.get(key).toString(), cls);
-                    fields.add(field);
-                }
-            } catch (NoSuchFieldException e) {
-                e.printStackTrace();
+            if(pairs.get(key) != null) {
+                __Field field = new __Field(key.toString(), pairs.get(key).toString(), cls);
+                fields.add(field);
             }
         }
+    }
+
+    public __Field getPrimaryKeyField(){
+        for(__Field field : fields){
+            if(field.is_primaryKey()){
+                return field;
+            }
+        }
+        return null;
     }
 
 }

@@ -1,7 +1,7 @@
 import annotations.*;
 
 import java.sql.SQLException;
-import java.util.HashSet;
+import java.util.ArrayList;
 
 @Table(tableName = "test")
 public class Main {
@@ -12,14 +12,11 @@ public class Main {
     @Field(fieldName = "test")
     public String test;
 
-    @OneToMany(tableName = "student")
-    public Student[] students;
+    @OneToMany(tableName = "student", foreignKeyName = "testid", classObject = Student.class)
+    public ArrayList<Student> students;
 
     public static void main(String[] args) throws SQLException {
-        Main m = (Main) Orm.getObject(Main.class, "1");
-        Student student = new Student();
-        student.name = "jakob";
-        student.test = m;
-        Orm.save(student);
+        //TODO: Main class in student needs to be set
+        Student student = (Student) Orm.getObject(Student.class, "4", true);
     }
 }
