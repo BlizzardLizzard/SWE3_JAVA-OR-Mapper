@@ -32,7 +32,7 @@ public class __TableObject {
         System.out.println("--------------------------------------------------------------------------");
     }
 
-    public static __Field getPrimaryKeyField(__TableObject _tableObject){
+    public static __Field getPkField(__TableObject _tableObject){
         for(__Field _field : _tableObject._fields){
             if(_field.is_primaryKey()){
                 return _field;

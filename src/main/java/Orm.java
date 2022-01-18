@@ -1,25 +1,20 @@
-import annotations.Table;
 import lombok.Getter;
 import lombok.Setter;
 import metamodel.__Field;
 import metamodel.__TableObject;
-import metamodel_2.__Table;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.sql.*;
 import java.util.ArrayList;
-import java.util.HashMap;
 
 public final class Orm {
-
     /** Get and Set Connection */
     @Getter
     @Setter
     private static Connection _connection;
 
-    /** Connects to the wanted database
-     * @throws SQLException Gets thrown when a connection failed */
+    /** Connects to the wanted database */
     public static void connect (){
         try {
             _connection = DriverManager.getConnection("jdbc:postgresql://localhost/Orm", "postgres", "passwort");
@@ -36,7 +31,7 @@ public final class Orm {
         StringBuilder insertQuery = new StringBuilder("INSERT INTO " + _tableObject.get_tableName() + " (");
 
         boolean firstItem = true;
-        for(metamodel.__Field _field : _tableObject.get_fields()) {
+        for(__Field _field : _tableObject.get_fields()) {
             if (_field.is_field()) {
                 if (_field.is_primaryKey()) {
                     continue;
@@ -52,7 +47,7 @@ public final class Orm {
         insertQuery.append(") VALUES (");
 
         firstItem = true;
-        for(metamodel.__Field _field : _tableObject.get_fields()) {
+        for(__Field _field : _tableObject.get_fields()) {
             if (_field.is_field()) {
                 if (_field.is_primaryKey()) {
                     continue;
@@ -71,14 +66,14 @@ public final class Orm {
             System.out.println(insertQuery);
 
             int index = 1;
-            for(metamodel.__Field _field : _tableObject.get_fields()) {
+            for(__Field _field : _tableObject.get_fields()) {
                 if (_field.is_field()) {
                     if (_field.is_primaryKey()) {continue;}
                     if(_field.is_foreignKey()) {
                         //TODO: change student to studenid -> int
                         Object fkObj = _field.get_fieldValue();
                         __TableObject _fkTableObj = new __TableObject(fkObj);
-                        for(metamodel.__Field _fkField : _fkTableObj.get_fields()){
+                        for(__Field _fkField : _fkTableObj.get_fields()){
                             if(_fkField.is_primaryKey()){
                                 ps.setString(index, _fkField.get_fieldValue().toString());
                             }
@@ -99,10 +94,13 @@ public final class Orm {
         connect();
         __TableObject _tableObject = new __TableObject(obj);
         StringBuilder updateQuery = new StringBuilder("UPDATE " + _tableObject.get_tableName() + " SET ");
-        metamodel.__Field _pKField = __TableObject.getPrimaryKeyField(_tableObject);
+        __Field _pKField = __TableObject.getPkField(_tableObject);
 
         boolean firstItem = true;
-        for(metamodel.__Field _field : _tableObject.get_fields()) {
+        for(__Field _field : _tableObject.get_fields()) {
+            if(_field.is_oneToMany()){
+                updateOneToManyList(_field);
+            }
             if (_field.is_field()) {
                 if (_field.is_primaryKey()) {
                     continue;
@@ -116,7 +114,7 @@ public final class Orm {
                 if(_field.is_foreignKey()){
                     Object fkObject = _field.get_fieldValue();
                     __TableObject _fkTableObj = new __TableObject(fkObject);
-                    for(metamodel.__Field _fkField : _fkTableObj.get_fields()){
+                    for(__Field _fkField : _fkTableObj.get_fields()){
                         if(_fkField.is_primaryKey()){
                             updateQuery.append(__Field.getAnnotationFieldValue(_field, "fieldName") + " = '" + _fkField.get_fieldValue().toString() + "'");
                         }
@@ -138,7 +136,19 @@ public final class Orm {
         }
     }
 
-    public static void updateOneToMany(Field field, Object obj){
+    private static void updateOneToManyList(__Field _field){
+        ArrayList<Object> arrayListMany = (ArrayList<Object>) _field.get_fieldValue();
+        for(Object obj : arrayListMany){
+            __TableObject _table = new __TableObject(obj);
+            if(__TableObject.getPkField(_table) != null){
+                update(obj);
+            } else {
+                save(obj);
+            }
+        }
+    }
+
+    /*public static void updateOneToMany(Field field, Object obj){
         field.setAccessible(true);
         try {
             ArrayList objects = (ArrayList) field.get(obj);
@@ -157,27 +167,31 @@ public final class Orm {
             e.printStackTrace();
         }
 
-    }
+    }*/
 
-    public static Object getObject(Class cls, String primaryKey){
+    public static Object getObject(Class cls, String primaryKey, boolean oneToMany){
+        //TODO: Boolean ersetzen und ihn stadnardmäßig auf true setzen
         connect();
         try {
             Object obj = cls.getConstructor().newInstance();
             __TableObject _table = new __TableObject(obj);
-            String getObjectQuery = "SELECT * FROM " + _table.get_tableName() + " WHERE id = " + primaryKey;
+            __Field _field = __TableObject.getPkField(_table);
+            String getObjectQuery = "SELECT * FROM " + _table.get_tableName() + " WHERE " + __Field.getAnnotationFieldValue(_field, "fieldName") + " = " + primaryKey;
+            System.out.println(getObjectQuery);
             ResultSet result = get_connection().prepareStatement(getObjectQuery).executeQuery();
-
             result.next();
-            System.out.println(result);
-            for(Field field : cls.getDeclaredFields()) {
+            for (Field field : cls.getDeclaredFields()) {
                 annotations.Field fieldAnnotation = field.getAnnotation(annotations.Field.class);
                 if (fieldAnnotation != null) {
                     if (field.isAnnotationPresent(annotations.ForeignKey.class)) {
-                        field.set(obj, getObject(field.getAnnotation(annotations.ForeignKey.class).foreignClass(), "1"));
+                        field.set(obj, getObject(field.getAnnotation(annotations.ForeignKey.class).foreignClass(), (String) result.getObject(field.getAnnotation(annotations.Field.class).fieldName()), false));
                     } else {
                         Object value = result.getObject(fieldAnnotation.fieldName());
                         field.set(obj, value);
                     }
+                }
+                if (field.isAnnotationPresent(annotations.OneToMany.class) && oneToMany){
+                   field.set(obj, getOneToManyList(field, primaryKey));
                 }
             }
             return obj;
@@ -187,37 +201,31 @@ public final class Orm {
         return null;
     }
 
-    private static ArrayList<Object> getOneToMany(Object obj, Field field) {
+    private static ArrayList<Object> getOneToManyList(Field field, String primaryKey){
         ArrayList<Object> arrayListMany = new ArrayList<>();
-        __Table table = new __Table(obj);
-        table.get_rows().set_table(table);
-        String getObjetsForObject = "SELECT * FROM " + field.getAnnotation(annotations.OneToMany.class).tableName() + " WHERE " + field.getAnnotation(annotations.OneToMany.class).foreignKeyName() + " = '" + table.get_rows().getPrimaryKeyField().get_field() + "'";
+        String getObjetsForObject = new StringBuilder().append("SELECT * FROM ").append(field.getAnnotation(annotations.OneToMany.class).tableName()).append(" WHERE ").append(field.getAnnotation(annotations.OneToMany.class).foreignKeyName()).append(" = '").append(primaryKey).append("'").toString();
         try {
-            Class manyObject = field.getAnnotation(annotations.OneToMany.class).classObject();
-            field.setAccessible(true);
-            ResultSet result = get_connection().prepareStatement(getObjetsForObject).executeQuery();
-            while (result.next()) {
-                Object tmp = field.getAnnotation(annotations.OneToMany.class).classObject().getConstructor().newInstance();
-                for (Field fieldResult : manyObject.getFields()) {
-                    annotations.Field fieldAnnotation = fieldResult.getAnnotation(annotations.Field.class);
-                    if(fieldAnnotation != null) {
-                        if (fieldResult.isAnnotationPresent(annotations.PrimaryKey.class)) {
-                            fieldResult.set(tmp, result.getObject(fieldAnnotation.fieldName()));
-                        }else {
-                            if (fieldResult.isAnnotationPresent(annotations.ForeignKey.class)) {
-                                //Object fkObject = getObject(fieldResult.getAnnotation(annotations.ForeignKey.class).foreignClass(), (String) result.getObject(fieldAnnotation.fieldName()), false);
-                                //fieldResult.set(tmp, fkObject);
-                            } else {
-                                fieldResult.set(tmp, result.getObject(fieldAnnotation.fieldName()));
-                            }
+            ResultSet resultMany = get_connection().prepareStatement(getObjetsForObject).executeQuery();
+            Class oneToManyCls = field.getAnnotation(annotations.OneToMany.class).classObject();
+            while (resultMany.next()) {
+                Object oneToManyObj = oneToManyCls.getConstructor().newInstance();
+                for(Field oneToManyField : oneToManyCls.getFields()){
+                    annotations.Field oneToManyFieldAnnotation = oneToManyField.getAnnotation(annotations.Field.class);
+                    if(oneToManyFieldAnnotation != null){
+                        if(oneToManyField.isAnnotationPresent(annotations.ForeignKey.class)){
+                            Object fkObject = getObject(oneToManyField.getAnnotation(annotations.ForeignKey.class).foreignClass(), primaryKey, false);
+                            oneToManyField.set(oneToManyObj, fkObject);
+                        } else {
+                            oneToManyField.set(oneToManyObj, resultMany.getObject(oneToManyFieldAnnotation.fieldName()));
                         }
                     }
                 }
-                arrayListMany.add(tmp);
+                arrayListMany.add(oneToManyObj);
             }
-        } catch (IllegalAccessException | SQLException | NoSuchMethodException | InvocationTargetException | InstantiationException e) {
+            return arrayListMany;
+        } catch (SQLException | IllegalAccessException | NoSuchMethodException | InvocationTargetException | InstantiationException e) {
             e.printStackTrace();
         }
-        return arrayListMany;
+        return null;
     }
 }

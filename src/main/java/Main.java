@@ -3,7 +3,6 @@ import annotations.OneToMany;
 import annotations.PrimaryKey;
 import annotations.Table;
 
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Objects;
 
@@ -20,8 +19,12 @@ public class Main {
     public ArrayList<Student> students;
 
     public static void main(String[] args){
-        Student s = (Student) Orm.getObject(Student.class, "7");
-        s.test = (Main) Orm.getObject(Main.class, "20");
-        Orm.update(s);
+        Main m = (Main) Orm.getObject(Main.class, "1", true);
+        for(Student s : m.students){
+            if(Objects.equals(s.name, "Jakob")){
+                s.name = "Jackos";
+            }
+        }
+        Orm.update(m);
     }
 }
