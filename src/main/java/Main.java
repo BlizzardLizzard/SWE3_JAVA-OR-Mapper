@@ -1,7 +1,11 @@
-import annotations.*;
+import annotations.Field;
+import annotations.OneToMany;
+import annotations.PrimaryKey;
+import annotations.Table;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Objects;
 
 @Table(tableName = "test")
 public class Main {
@@ -15,8 +19,9 @@ public class Main {
     @OneToMany(tableName = "student", foreignKeyName = "testid", classObject = Student.class)
     public ArrayList<Student> students;
 
-    public static void main(String[] args) throws SQLException {
-        //TODO: Main class in student needs to be set
-        Student student = (Student) Orm.getObject(Student.class, "4", true);
+    public static void main(String[] args){
+        Student s = (Student) Orm.getObject(Student.class, "7");
+        s.test = (Main) Orm.getObject(Main.class, "20");
+        Orm.update(s);
     }
 }

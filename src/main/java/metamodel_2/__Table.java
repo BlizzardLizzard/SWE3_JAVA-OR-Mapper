@@ -1,14 +1,13 @@
-package metamodel;
+package metamodel_2;
 
-import annotations.PrimaryKey;
 import annotations.Table;
 import lombok.Getter;
 import lombok.Setter;
 
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.util.*;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Locale;
 
 public class __Table {
 
