@@ -38,6 +38,10 @@ public class __Field {
 
     @Getter
     @Setter
+    private boolean _manyToMany = false;
+
+    @Getter
+    @Setter
     private ArrayList<__AnnotationData> _annotationList;
 
     public __Field(Field field, Object obj) {
@@ -63,7 +67,10 @@ public class __Field {
         if(field.isAnnotationPresent(annotations.OneToMany.class)){
             _oneToMany = true;
         }
-        System.out.println(_fieldType + " " + _fieldName + " = " + _fieldValue + " and is PrimaryKey: " + _primaryKey + ", ForeignKey: " +  _foreignKey + " with OneToMany: " + _oneToMany);
+        if(field.isAnnotationPresent(annotations.ManyToMany.class)){
+            _manyToMany = true;
+        }
+        System.out.println(_fieldType + " " + _fieldName + " = " + _fieldValue + " and is PrimaryKey: " + _primaryKey + ", ForeignKey: " +  _foreignKey + ", OneToMany: " + _oneToMany + " and ManyToMany: " + _manyToMany);
         for(Annotation annotation : field.getAnnotations()){
             __AnnotationData _annotationData = new __AnnotationData(annotation, field);
             _annotationList.add(_annotationData);

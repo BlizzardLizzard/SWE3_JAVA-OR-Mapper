@@ -33,9 +33,6 @@ public final class Orm {
         boolean firstItem = true;
         for(__Field _field : _tableObject.get_fields()) {
             if (_field.is_field()) {
-                if (_field.is_primaryKey()) {
-                    continue;
-                }
                 if (firstItem) {
                     firstItem = false;
                 } else {
@@ -49,9 +46,6 @@ public final class Orm {
         firstItem = true;
         for(__Field _field : _tableObject.get_fields()) {
             if (_field.is_field()) {
-                if (_field.is_primaryKey()) {
-                    continue;
-                }
                 if (firstItem) {
                     firstItem = false;
                 } else {
@@ -68,9 +62,9 @@ public final class Orm {
             int index = 1;
             for(__Field _field : _tableObject.get_fields()) {
                 if (_field.is_field()) {
-                    if (_field.is_primaryKey()) {continue;}
                     if(_field.is_foreignKey()) {
                         //TODO: change student to studenid -> int
+                        //TODO: implement save of foreign and other relations without their id
                         Object fkObj = _field.get_fieldValue();
                         __TableObject _fkTableObj = new __TableObject(fkObj);
                         for(__Field _fkField : _fkTableObj.get_fields()){
@@ -79,7 +73,12 @@ public final class Orm {
                             }
                         }
                     } else {
-                        ps.setString(index++, _field.get_fieldValue().toString());
+                        //TODO: adapt to value type
+                        if(_field.is_primaryKey()){
+                            ps.setInt(index++, Integer.parseInt(_field.get_fieldValue().toString()));
+                        } else {
+                            ps.setString(index++, _field.get_fieldValue().toString());
+                        }
                     }
                 }
             }
@@ -98,8 +97,8 @@ public final class Orm {
 
         boolean firstItem = true;
         for(__Field _field : _tableObject.get_fields()) {
-            if(_field.is_oneToMany()){
-                updateOneToManyList(_field);
+            if(_field.is_oneToMany() || _field.is_manyToMany()){
+                updateToManyList(_field, obj);
             }
             if (_field.is_field()) {
                 if (_field.is_primaryKey()) {
@@ -136,41 +135,38 @@ public final class Orm {
         }
     }
 
-    private static void updateOneToManyList(__Field _field){
-        ArrayList<Object> arrayListMany = (ArrayList<Object>) _field.get_fieldValue();
-        for(Object obj : arrayListMany){
-            __TableObject _table = new __TableObject(obj);
-            if(__TableObject.getPkField(_table) != null){
-                update(obj);
-            } else {
-                save(obj);
+    private static void updateToManyList(__Field _field, Object obj){
+        if(_field.get_fieldValue() != null) {
+            ArrayList<Object> arrayListMany = (ArrayList<Object>) _field.get_fieldValue();
+            for (Object objList : arrayListMany) {
+                __TableObject _table = new __TableObject(objList);
+                if (__TableObject.getPkField(_table) != null) {
+                    update(objList);
+                } else {
+                    save(objList);
+                }
+                if (_field.is_manyToMany()) {
+                    __TableObject _tableMainObj = new __TableObject(obj);
+                    String checkIfExists = "SELECT COUNT(*) FROM " + __Field.getAnnotationFieldValue(_field, "manyToManyTableName") + " WHERE " + __Field.getAnnotationFieldValue(_field, "foreignKeyNameOwn") + " = " + __TableObject.getPkField(_table).get_fieldValue() + " AND " + __Field.getAnnotationFieldValue(_field, "foreignKeyNameOther") + " = " + __TableObject.getPkField(_tableMainObj).get_fieldValue();
+                    String insertManyFk = "INSERT INTO " + __Field.getAnnotationFieldValue(_field, "manyToManyTableName") + " (" + __Field.getAnnotationFieldValue(_field, "foreignKeyNameOwn") + ", " + __Field.getAnnotationFieldValue(_field, "foreignKeyNameOther") + ") VALUES (" + __TableObject.getPkField(_table).get_fieldValue() + ", " + __TableObject.getPkField(_tableMainObj).get_fieldValue() + ")";
+                    try {
+                        ResultSet result = get_connection().prepareStatement(checkIfExists).executeQuery();
+                        result.next();
+                        int numberOfRows = result.getInt(1);
+                        if(numberOfRows < 1){
+                            PreparedStatement ps = get_connection().prepareStatement(insertManyFk);
+                            ps.execute();
+                            ps.close();
+                        }
+                    } catch (SQLException e) {
+                        e.printStackTrace();
+                    }
+                }
             }
         }
     }
 
-    /*public static void updateOneToMany(Field field, Object obj){
-        field.setAccessible(true);
-        try {
-            ArrayList objects = (ArrayList) field.get(obj);
-            for(Object tmp : objects){
-                __Table table = new __Table(tmp);
-                table.get_rows().set_table(table);
-                //TODO: INSERT INTO test (id, test) VALUES (21, 'conflict') ON CONFLICT (id) DO UPDATE SET test = excluded.test;
-                //TODO: filter if id is null and if so create new entry
-                if(table.get_rows().getPrimaryKeyField() == null){
-                    save(tmp);
-                } else {
-                    update(tmp);
-                }
-            }
-        } catch (IllegalAccessException e) {
-            e.printStackTrace();
-        }
-
-    }*/
-
-    public static Object getObject(Class cls, String primaryKey, boolean oneToMany){
-        //TODO: Boolean ersetzen und ihn stadnardmäßig auf true setzen
+    public static Object getObject(Class cls, String primaryKey, boolean toMany){
         connect();
         try {
             Object obj = cls.getConstructor().newInstance();
@@ -190,8 +186,13 @@ public final class Orm {
                         field.set(obj, value);
                     }
                 }
-                if (field.isAnnotationPresent(annotations.OneToMany.class) && oneToMany){
-                   field.set(obj, getOneToManyList(field, primaryKey));
+                if(toMany) {
+                    if (field.isAnnotationPresent(annotations.OneToMany.class)) {
+                        field.set(obj, getOneToManyList(field, primaryKey));
+                    }
+                    if (field.isAnnotationPresent(annotations.ManyToMany.class)) {
+                        field.set(obj, getManyToManyList(field, primaryKey));
+                    }
                 }
             }
             return obj;
@@ -224,6 +225,24 @@ public final class Orm {
             }
             return arrayListMany;
         } catch (SQLException | IllegalAccessException | NoSuchMethodException | InvocationTargetException | InstantiationException e) {
+            e.printStackTrace();
+        }
+        return null;
+    }
+
+    private static ArrayList<Object> getManyToManyList(Field field, String primaryKey){
+        ArrayList<Object> arrayListMany = new ArrayList<>();
+        //TODO: get ids from teacher_course and then get every object from the course fields
+        String getIds = "SELECT * FROM " + field.getAnnotation(annotations.ManyToMany.class).manyToManyTableName() + " WHERE " + field.getAnnotation(annotations.ManyToMany.class).foreignKeyNameOwn() + " = " + primaryKey;
+        System.out.println(getIds);
+        try {
+            ResultSet resultMany = get_connection().prepareStatement(getIds).executeQuery();
+            while (resultMany.next()){
+                Object tmp = getObject(field.getAnnotation(annotations.ManyToMany.class).classObject(), resultMany.getObject(field.getAnnotation(annotations.ManyToMany.class).foreignKeyNameOther()).toString(), false);
+                arrayListMany.add(tmp);
+            }
+            return arrayListMany;
+        } catch (SQLException e) {
             e.printStackTrace();
         }
         return null;

@@ -2,6 +2,7 @@ import annotations.Field;
 import annotations.OneToMany;
 import annotations.PrimaryKey;
 import annotations.Table;
+import metamodel.__TableObject;
 
 import java.util.ArrayList;
 import java.util.Objects;
@@ -19,12 +20,8 @@ public class Main {
     public ArrayList<Student> students;
 
     public static void main(String[] args){
-        Main m = (Main) Orm.getObject(Main.class, "1", true);
-        for(Student s : m.students){
-            if(Objects.equals(s.name, "Jakob")){
-                s.name = "Jackos";
-            }
-        }
-        Orm.update(m);
+        //TODO: Update every sql execution to prepared statements
+        Teacher t = (Teacher) Orm.getObject(Teacher.class, "1", true);
+        Orm.update(t);
     }
 }

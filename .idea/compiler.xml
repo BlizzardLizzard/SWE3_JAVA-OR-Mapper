@@ -10,8 +10,5 @@
         <module name="SWE3_JAVA-OR-Mapper" />
       </profile>
     </annotationProcessing>
-    <bytecodeTargetLevel>
-      <module name="SWE3_JAVA-OR-Mapper" target="15" />
-    </bytecodeTargetLevel>
   </component>
 </project>
