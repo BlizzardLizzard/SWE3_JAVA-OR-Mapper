@@ -6,7 +6,12 @@
 
     <groupId>org.example</groupId>
     <artifactId>SWE3_JAVA-OR-Mapper</artifactId>
+    <packaging>pom</packaging>
     <version>1.0-SNAPSHOT</version>
+    <modules>
+        <module>DemoApp</module>
+        <module>OrFramework</module>
+    </modules>
 
     <dependencies>
         <dependency>
