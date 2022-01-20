@@ -42,6 +42,14 @@ public class __Field {
 
     @Getter
     @Setter
+    private boolean _notNull = false;
+
+    @Getter
+    @Setter
+    private boolean _unique = false;
+
+    @Getter
+    @Setter
     private ArrayList<__AnnotationData> _annotationList;
 
     public __Field(Field field, Object obj) {

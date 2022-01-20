@@ -8,7 +8,7 @@ import java.util.ArrayList;
 @Table(tableName = "test")
 public class Main {
     @PrimaryKey
-    @Field(fieldName = "id")
+    @Field(fieldName = "id", notNull = true, unique = true)
     public Integer id;
 
     @Field(fieldName = "test")
@@ -18,7 +18,8 @@ public class Main {
     public ArrayList<Student> students;
 
     public static void main(String[] args){
+        //TODO: DON'T DELETE
         Orm.connect("jdbc:postgresql://localhost/Orm", "postgres", "passwort");
-        Main m = Orm.getObject(Main.class, 4, true);
+        Orm.createTableFK(Student.class, Main.class);
     }
 }

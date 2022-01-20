@@ -21,6 +21,8 @@ public class __AnnotationData {
         _annotationType = annotation.annotationType();
         if(field.isAnnotationPresent(annotations.Field.class)){
             _annotationPairs.put("fieldName", field.getAnnotation(annotations.Field.class).fieldName());
+            _annotationPairs.put("notNull", field.getAnnotation(annotations.Field.class).notNull());
+            _annotationPairs.put("unique", field.getAnnotation(annotations.Field.class).unique());
         }
         if(field.isAnnotationPresent(annotations.ForeignKey.class)){
             _annotationPairs.put("fkTableName", field.getAnnotation(annotations.ForeignKey.class).fKTableName());

@@ -141,38 +141,45 @@ public final class Orm {
     }
 
     private static void updateToManyList(__Field _field, Object obj){
-        if(_field.get_fieldValue() != null) {
-            ArrayList<Object> arrayListMany = (ArrayList<Object>) _field.get_fieldValue();
-            for (Object objList : arrayListMany) {
-                __TableObject _table = new __TableObject(objList);
-                if (__TableObject.getPkField(_table) != null) {
-                    update(objList);
-                } else {
-                    save(objList);
-                }
-                if (_field.is_manyToMany()) {
-                    __TableObject _tableMainObj = new __TableObject(obj);
-                    String checkIfExists = "SELECT COUNT(*) FROM " + __Field.getAnnotationFieldValue(_field, "manyToManyTableName") + " WHERE " + __Field.getAnnotationFieldValue(_field, "foreignKeyNameOwn") + " = ?  AND " + __Field.getAnnotationFieldValue(_field, "foreignKeyNameOther") + " = ?";
-                    String insertManyFk = "INSERT INTO " + __Field.getAnnotationFieldValue(_field, "manyToManyTableName") + " (" + __Field.getAnnotationFieldValue(_field, "foreignKeyNameOwn") + ", " + __Field.getAnnotationFieldValue(_field, "foreignKeyNameOther") + ") VALUES ( ?, ? )";
-                    try {
-                        PreparedStatement psCount = get_connection().prepareStatement(checkIfExists);
-                        setPsForTypeForField(psCount, __TableObject.getPkField(_table), 1);
-                        setPsForTypeForField(psCount, __TableObject.getPkField(_tableMainObj), 2);
-                        ResultSet result = psCount.executeQuery();
+        try {
+            if(_field.get_fieldValue() != null) {
+                ArrayList<Object> arrayListMany = (ArrayList<Object>) _field.get_fieldValue();
+                for (Object objList : arrayListMany) {
+                    __TableObject _table = new __TableObject(objList);
+                    String checkIfExists = "SELECT COUNT(*) FROM " + _table.get_tableName() + " WHERE " + __TableObject.getPkField(_table).get_fieldName() + " = ?";
+                    PreparedStatement psCountOneToMany = get_connection().prepareStatement(checkIfExists);
+                    setPsForTypeForField(psCountOneToMany, __TableObject.getPkField(_table), 1);
+                    ResultSet resultOneToMany = psCountOneToMany.executeQuery();
+                    resultOneToMany.next();
+                    int numberOfRows = resultOneToMany.getInt(1);
+                    System.out.println(numberOfRows);
+                    if (numberOfRows >= 1) {
+                        update(objList);
+                    } else {
+                        save(objList);
+                    }
+                    if (_field.is_manyToMany()) {
+                        __TableObject _tableMainObj = new __TableObject(obj);
+                        checkIfExists = "SELECT COUNT(*) FROM " + __Field.getAnnotationFieldValue(_field, "manyToManyTableName") + " WHERE " + __Field.getAnnotationFieldValue(_field, "foreignKeyNameOwn") + " = ?  AND " + __Field.getAnnotationFieldValue(_field, "foreignKeyNameOther") + " = ?";
+                        String insertManyFk = "INSERT INTO " + __Field.getAnnotationFieldValue(_field, "manyToManyTableName") + " (" + __Field.getAnnotationFieldValue(_field, "foreignKeyNameOwn") + ", " + __Field.getAnnotationFieldValue(_field, "foreignKeyNameOther") + ") VALUES ( ?, ? )";
+                        PreparedStatement psCountManyToMany = get_connection().prepareStatement(checkIfExists);
+                        setPsForTypeForField(psCountManyToMany, __TableObject.getPkField(_tableMainObj), 1);
+                        setPsForTypeForField(psCountManyToMany, __TableObject.getPkField(_table), 2);
+                        ResultSet result = psCountManyToMany.executeQuery();
                         result.next();
-                        int numberOfRows = result.getInt(1);
+                        numberOfRows = result.getInt(1);
                         if(numberOfRows < 1){
                             PreparedStatement psInsert = get_connection().prepareStatement(insertManyFk);
-                            setPsForTypeForField(psInsert, __TableObject.getPkField(_table), 1);
-                            setPsForTypeForField(psInsert, __TableObject.getPkField(_tableMainObj), 2);
+                            setPsForTypeForField(psInsert, __TableObject.getPkField(_tableMainObj), 1);
+                            setPsForTypeForField(psInsert, __TableObject.getPkField(_table), 2);
                             psInsert.execute();
                             psInsert.close();
                         }
-                    } catch (SQLException e) {
-                        e.printStackTrace();
                     }
                 }
             }
+        } catch (SQLException e) {
+            e.printStackTrace();
         }
     }
 
@@ -274,5 +281,137 @@ public final class Orm {
             }
         }
         return index;
+    }
+
+    public static void createTable(Class cls){
+        try {
+            Object obj = cls.getConstructor().newInstance();
+            __TableObject _table = new __TableObject(obj);
+            __Field _pkField = null;
+            StringBuilder createQuery = new StringBuilder("CREATE TABLE " + _table.get_tableName() + " (");
+            boolean firstItem = true;
+            for(__Field _field : _table.get_fields()){
+                if(_field.is_field()) {
+                    if(_field.is_primaryKey()){
+                        _pkField = _field;
+                    }
+                    if (firstItem) {
+                        firstItem = false;
+                    } else {
+                        createQuery.append(", ");
+                    }
+                    createQuery.append(__Field.getAnnotationFieldValue(_field, "fieldName")).append(" ").append(changeTypeForSQL(_field));
+                    if ((boolean) __Field.getAnnotationFieldValue(_field, "notNull")) {
+                        createQuery.append(" NOT NULL");
+                    }
+                    if ((boolean) __Field.getAnnotationFieldValue(_field, "unique")) {
+                        createQuery.append(" UNIQUE");
+                    }
+
+                }
+            }
+            if(_pkField != null){
+                createQuery.append(", PRIMARY KEY (" + __Field.getAnnotationFieldValue(_pkField, "fieldName") + ")");
+            }
+            createQuery.append(")");
+            System.out.println(createQuery);
+            PreparedStatement ps = get_connection().prepareStatement(createQuery.toString());
+            ps.execute();
+            ps.close();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | SQLException |NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void createTableFK(Class cls, Class clsFK){
+        try {
+            Object obj = cls.getConstructor().newInstance();
+            __TableObject _table = new __TableObject(obj);
+            __Field _pkField = __TableObject.getPkField(_table);
+            __Field _fkField = null;
+            StringBuilder createQuery = new StringBuilder("CREATE TABLE " + _table.get_tableName() + " (");
+            boolean firstItem = true;
+            for(__Field _field : _table.get_fields()){
+                if(_field.is_field()) {
+                    if(_field.is_foreignKey()){
+                        _fkField = _field;
+                    }
+                    if (firstItem) {
+                        firstItem = false;
+                    } else {
+                        createQuery.append(", ");
+                    }
+                    if(_field.is_foreignKey()){
+                        Object objFK = clsFK.getConstructor().newInstance();
+                        __TableObject _tableFK = new __TableObject(objFK);
+                        __Field _fkFieldId = __TableObject.getPkField(_tableFK);
+                        createQuery.append(__Field.getAnnotationFieldValue(_field, "fieldName")).append(" ").append(changeTypeForSQL(_fkFieldId));
+                    } else {
+                        createQuery.append(__Field.getAnnotationFieldValue(_field, "fieldName")).append(" ").append(changeTypeForSQL(_field));
+                    }
+                    if ((boolean) __Field.getAnnotationFieldValue(_field, "notNull")) {
+                        createQuery.append(" NOT NULL");
+                    }
+                    if ((boolean) __Field.getAnnotationFieldValue(_field, "unique")) {
+                        createQuery.append(" UNIQUE");
+                    }
+                }
+            }
+            if(_pkField != null){
+                createQuery.append(", PRIMARY KEY (" + __Field.getAnnotationFieldValue(_pkField, "fieldName") + ")");
+            }
+            if(_fkField != null){
+                Object objFK = clsFK.getConstructor().newInstance();
+                __TableObject _tableFK = new __TableObject(objFK);
+                __Field _fkFieldId = __TableObject.getPkField(_tableFK);
+                createQuery.append(", FOREIGN KEY (" + __Field.getAnnotationFieldValue(_fkField, "fieldName") + ")");
+                createQuery.append(" REFERENCES " + _tableFK.get_tableName() + " (" + __Field.getAnnotationFieldValue(_fkFieldId, "fieldName") + ")");
+            }
+            createQuery.append(")");
+            System.out.println(createQuery);
+            PreparedStatement ps = get_connection().prepareStatement(createQuery.toString());
+            ps.execute();
+            ps.close();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | SQLException |NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+    }
+
+    public static void linkManyToManyTables(Class clsOne, Class clsTwo){
+        try {
+            __TableObject _tableOne = new __TableObject(clsOne.getConstructor().newInstance());
+            __TableObject _tableTwo = new __TableObject(clsTwo.getConstructor().newInstance());
+            __Field _manyToManyField = null;
+            __Field _primaryKeyOne = __TableObject.getPkField(_tableOne);
+            __Field _primaryKeyTwo = __TableObject.getPkField(_tableTwo);
+            for(__Field _field : _tableOne.get_fields()){
+                if(_field.is_manyToMany()){
+                    _manyToManyField = _field;
+                }
+            }
+            String linkManyToMany = "CREATE TABLE " + __Field.getAnnotationFieldValue(_manyToManyField, "manyToManyTableName") + " (" + __Field.getAnnotationFieldValue(_manyToManyField, "foreignKeyNameOwn") + " " + changeTypeForSQL(_primaryKeyOne) + ", " + __Field.getAnnotationFieldValue(_manyToManyField, "foreignKeyNameOther") + " " + changeTypeForSQL(_primaryKeyTwo) + ", FOREIGN KEY (" + __Field.getAnnotationFieldValue(_manyToManyField, "foreignKeyNameOwn") + ") REFERENCES " + _tableOne.get_tableName() + " (" + __Field.getAnnotationFieldValue(_primaryKeyOne, "fieldName") + ")";
+            linkManyToMany += ", FOREIGN KEY (" + __Field.getAnnotationFieldValue(_manyToManyField, "foreignKeyNameOther") + ") REFERENCES " + _tableTwo.get_tableName() + " (" + __Field.getAnnotationFieldValue(_primaryKeyTwo, "fieldName") + "))";
+            System.out.println(linkManyToMany);
+            get_connection().prepareStatement(linkManyToMany).execute();
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static String changeTypeForSQL(__Field _field){
+        String sqlType = "";
+        if(_field.is_field()) {
+            Type type = (Type) _field.get_fieldType();
+            if(type.equals(Integer.class)){
+                sqlType = "int";
+            }
+            if(type.equals(String.class)){
+                sqlType = "varchar";
+            }
+            if(type.equals(Boolean.class)){
+                sqlType = "boolean";
+            }
+        }
+        return sqlType;
     }
 }

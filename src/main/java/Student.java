@@ -6,7 +6,7 @@ import annotations.Table;
 @Table(tableName = "student")
 public class Student {
     @PrimaryKey
-    @Field(fieldName = "id")
+    @Field(fieldName = "id", notNull = true, unique = true)
     public Integer id;
 
     @Field(fieldName = "name")
