@@ -2,10 +2,8 @@ import annotations.Field;
 import annotations.OneToMany;
 import annotations.PrimaryKey;
 import annotations.Table;
-import metamodel.__TableObject;
 
 import java.util.ArrayList;
-import java.util.Objects;
 
 @Table(tableName = "test")
 public class Main {
@@ -20,8 +18,7 @@ public class Main {
     public ArrayList<Student> students;
 
     public static void main(String[] args){
-        //TODO: Update every sql execution to prepared statements
-        Teacher t = (Teacher) Orm.getObject(Teacher.class, "1", true);
-        Orm.update(t);
+        Orm.connect("jdbc:postgresql://localhost/Orm", "postgres", "passwort");
+        Main m = Orm.getObject(Main.class, 4, true);
     }
 }

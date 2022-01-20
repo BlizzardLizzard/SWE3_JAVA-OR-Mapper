@@ -19,7 +19,6 @@ public class __AnnotationData {
     public __AnnotationData(Annotation annotation, Field field) {
         _annotationPairs = new HashMap<>();
         _annotationType = annotation.annotationType();
-        //TODO: Delete duplicates getting into field and primary key for example
         if(field.isAnnotationPresent(annotations.Field.class)){
             _annotationPairs.put("fieldName", field.getAnnotation(annotations.Field.class).fieldName());
         }

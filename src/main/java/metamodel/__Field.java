@@ -47,7 +47,6 @@ public class __Field {
     public __Field(Field field, Object obj) {
         _annotationList = new ArrayList<>();
         field.setAccessible(true);
-        //TODO: checks if empty or null needed
         _fieldType = field.getType();
         _fieldName = field.getName();
         try {
