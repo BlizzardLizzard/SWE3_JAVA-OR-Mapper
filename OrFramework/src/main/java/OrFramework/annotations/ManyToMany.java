@@ -1,4 +1,4 @@
-package annotations;
+package OrFramework.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,8 +7,10 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface OneToMany {
+public @interface ManyToMany {
     String tableName() default "";
-    String foreignKeyName() default "";
+    String foreignKeyNameOwn() default "";
+    String foreignKeyNameOther() default "";
     Class classObject() default Void.class;
+    String manyToManyTableName() default "";
 }

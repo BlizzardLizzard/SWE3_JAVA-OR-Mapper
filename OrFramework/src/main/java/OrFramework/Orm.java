@@ -1,7 +1,12 @@
+package OrFramework;
+
+import OrFramework.annotations.ForeignKey;
+import OrFramework.annotations.ManyToMany;
+import OrFramework.annotations.OneToMany;
 import lombok.Getter;
 import lombok.Setter;
-import metamodel.__Field;
-import metamodel.__TableObject;
+import OrFramework.metamodel.__Field;
+import OrFramework.metamodel.__TableObject;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -55,7 +60,6 @@ public final class Orm {
         insertQuery.append(")");
         try {
             PreparedStatement ps = get_connection().prepareStatement(insertQuery.toString());
-            System.out.println(insertQuery);
 
             int index = 1;
             for(__Field _field : _tableObject.get_fields()) {
@@ -112,7 +116,6 @@ public final class Orm {
         }
         updateQuery.append(" WHERE ");
         updateQuery.append(__Field.getAnnotationFieldValue(_pKField, "fieldName")).append(" = ?");
-        System.out.println(updateQuery);
         try {
             PreparedStatement ps = get_connection().prepareStatement(updateQuery.toString());
             int index = 1;
@@ -152,7 +155,6 @@ public final class Orm {
                     ResultSet resultOneToMany = psCountOneToMany.executeQuery();
                     resultOneToMany.next();
                     int numberOfRows = resultOneToMany.getInt(1);
-                    System.out.println(numberOfRows);
                     if (numberOfRows >= 1) {
                         update(objList);
                     } else {
@@ -189,24 +191,23 @@ public final class Orm {
             __TableObject _table = new __TableObject(obj);
             __Field _field = __TableObject.getPkField(_table);
             String getObjectQuery = "SELECT * FROM " + _table.get_tableName() + " WHERE " + __Field.getAnnotationFieldValue(_field, "fieldName") + " = " + primaryKey;
-            System.out.println(getObjectQuery);
             ResultSet result = get_connection().prepareStatement(getObjectQuery).executeQuery();
             result.next();
             for (Field field : cls.getDeclaredFields()) {
-                annotations.Field fieldAnnotation = field.getAnnotation(annotations.Field.class);
+                OrFramework.annotations.Field fieldAnnotation = field.getAnnotation(OrFramework.annotations.Field.class);
                 if (fieldAnnotation != null) {
-                    if (field.isAnnotationPresent(annotations.ForeignKey.class)) {
-                        field.set(obj, getObject(field.getAnnotation(annotations.ForeignKey.class).foreignClass(), result.getObject(field.getAnnotation(annotations.Field.class).fieldName()), false));
+                    if (field.isAnnotationPresent(ForeignKey.class)) {
+                        field.set(obj, getObject(field.getAnnotation(ForeignKey.class).foreignClass(), result.getObject(field.getAnnotation(OrFramework.annotations.Field.class).fieldName()), false));
                     } else {
                         Object value = result.getObject(fieldAnnotation.fieldName());
                         field.set(obj, value);
                     }
                 }
                 if(toMany) {
-                    if (field.isAnnotationPresent(annotations.OneToMany.class)) {
+                    if (field.isAnnotationPresent(OneToMany.class)) {
                         field.set(obj, getOneToManyList(field, primaryKey));
                     }
-                    if (field.isAnnotationPresent(annotations.ManyToMany.class)) {
+                    if (field.isAnnotationPresent(ManyToMany.class)) {
                         field.set(obj, getManyToManyList(field, primaryKey));
                     }
                 }
@@ -220,17 +221,17 @@ public final class Orm {
 
     private static ArrayList<Object> getOneToManyList(Field field, Object primaryKey){
         ArrayList<Object> arrayListMany = new ArrayList<>();
-        String getObjetsForObject = "SELECT * FROM " + field.getAnnotation(annotations.OneToMany.class).tableName() + " WHERE " + field.getAnnotation(annotations.OneToMany.class).foreignKeyName() + " = " + primaryKey;
+        String getObjetsForObject = "SELECT * FROM " + field.getAnnotation(OneToMany.class).tableName() + " WHERE " + field.getAnnotation(OneToMany.class).foreignKeyName() + " = " + primaryKey;
         try {
             ResultSet resultMany = get_connection().prepareStatement(getObjetsForObject).executeQuery();
-            Class oneToManyCls = field.getAnnotation(annotations.OneToMany.class).classObject();
+            Class oneToManyCls = field.getAnnotation(OneToMany.class).classObject();
             while (resultMany.next()) {
                 Object oneToManyObj = oneToManyCls.getConstructor().newInstance();
                 for(Field oneToManyField : oneToManyCls.getFields()){
-                    annotations.Field oneToManyFieldAnnotation = oneToManyField.getAnnotation(annotations.Field.class);
+                    OrFramework.annotations.Field oneToManyFieldAnnotation = oneToManyField.getAnnotation(OrFramework.annotations.Field.class);
                     if(oneToManyFieldAnnotation != null){
-                        if(oneToManyField.isAnnotationPresent(annotations.ForeignKey.class)){
-                            Object fkObject = getObject(oneToManyField.getAnnotation(annotations.ForeignKey.class).foreignClass(), primaryKey, false);
+                        if(oneToManyField.isAnnotationPresent(ForeignKey.class)){
+                            Object fkObject = getObject(oneToManyField.getAnnotation(ForeignKey.class).foreignClass(), primaryKey, false);
                             oneToManyField.set(oneToManyObj, fkObject);
                         } else {
                             oneToManyField.set(oneToManyObj, resultMany.getObject(oneToManyFieldAnnotation.fieldName()));
@@ -248,12 +249,11 @@ public final class Orm {
 
     private static ArrayList<Object> getManyToManyList(Field field, Object primaryKey){
         ArrayList<Object> arrayListMany = new ArrayList<>();
-        String getIds = "SELECT * FROM " + field.getAnnotation(annotations.ManyToMany.class).manyToManyTableName() + " WHERE " + field.getAnnotation(annotations.ManyToMany.class).foreignKeyNameOwn() + " = " + primaryKey;
-        System.out.println(getIds);
+        String getIds = "SELECT * FROM " + field.getAnnotation(ManyToMany.class).manyToManyTableName() + " WHERE " + field.getAnnotation(ManyToMany.class).foreignKeyNameOwn() + " = " + primaryKey;
         try {
             ResultSet resultMany = get_connection().prepareStatement(getIds).executeQuery();
             while (resultMany.next()){
-                Object tmp = getObject(field.getAnnotation(annotations.ManyToMany.class).classObject(), resultMany.getObject(field.getAnnotation(annotations.ManyToMany.class).foreignKeyNameOther()).toString(), false);
+                Object tmp = getObject(field.getAnnotation(ManyToMany.class).classObject(), resultMany.getObject(field.getAnnotation(ManyToMany.class).foreignKeyNameOther()).toString(), false);
                 arrayListMany.add(tmp);
             }
             return arrayListMany;
@@ -314,7 +314,6 @@ public final class Orm {
                 createQuery.append(", PRIMARY KEY (" + __Field.getAnnotationFieldValue(_pkField, "fieldName") + ")");
             }
             createQuery.append(")");
-            System.out.println(createQuery);
             PreparedStatement ps = get_connection().prepareStatement(createQuery.toString());
             ps.execute();
             ps.close();
@@ -368,7 +367,6 @@ public final class Orm {
                 createQuery.append(" REFERENCES " + _tableFK.get_tableName() + " (" + __Field.getAnnotationFieldValue(_fkFieldId, "fieldName") + ")");
             }
             createQuery.append(")");
-            System.out.println(createQuery);
             PreparedStatement ps = get_connection().prepareStatement(createQuery.toString());
             ps.execute();
             ps.close();
@@ -391,7 +389,6 @@ public final class Orm {
             }
             String linkManyToMany = "CREATE TABLE " + __Field.getAnnotationFieldValue(_manyToManyField, "manyToManyTableName") + " (" + __Field.getAnnotationFieldValue(_manyToManyField, "foreignKeyNameOwn") + " " + changeTypeForSQL(_primaryKeyOne) + ", " + __Field.getAnnotationFieldValue(_manyToManyField, "foreignKeyNameOther") + " " + changeTypeForSQL(_primaryKeyTwo) + ", FOREIGN KEY (" + __Field.getAnnotationFieldValue(_manyToManyField, "foreignKeyNameOwn") + ") REFERENCES " + _tableOne.get_tableName() + " (" + __Field.getAnnotationFieldValue(_primaryKeyOne, "fieldName") + ")";
             linkManyToMany += ", FOREIGN KEY (" + __Field.getAnnotationFieldValue(_manyToManyField, "foreignKeyNameOther") + ") REFERENCES " + _tableTwo.get_tableName() + " (" + __Field.getAnnotationFieldValue(_primaryKeyTwo, "fieldName") + "))";
-            System.out.println(linkManyToMany);
             get_connection().prepareStatement(linkManyToMany).execute();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | SQLException e) {
             e.printStackTrace();

@@ -1,5 +1,9 @@
-package metamodel;
+package OrFramework.metamodel;
 
+import OrFramework.annotations.ForeignKey;
+import OrFramework.annotations.ManyToMany;
+import OrFramework.annotations.OneToMany;
+import OrFramework.annotations.PrimaryKey;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -62,22 +66,22 @@ public class __Field {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
-        if(field.isAnnotationPresent(annotations.Field.class)){
+        if(field.isAnnotationPresent(OrFramework.annotations.Field.class)){
             _field = true;
         }
-        if(field.isAnnotationPresent(annotations.PrimaryKey.class)){
+        if(field.isAnnotationPresent(PrimaryKey.class)){
             _primaryKey = true;
         }
-        if(field.isAnnotationPresent(annotations.ForeignKey.class)){
+        if(field.isAnnotationPresent(ForeignKey.class)){
             _foreignKey = true;
         }
-        if(field.isAnnotationPresent(annotations.OneToMany.class)){
+        if(field.isAnnotationPresent(OneToMany.class)){
             _oneToMany = true;
         }
-        if(field.isAnnotationPresent(annotations.ManyToMany.class)){
+        if(field.isAnnotationPresent(ManyToMany.class)){
             _manyToMany = true;
         }
-        System.out.println(_fieldType + " " + _fieldName + " = " + _fieldValue + " and is PrimaryKey: " + _primaryKey + ", ForeignKey: " +  _foreignKey + ", OneToMany: " + _oneToMany + " and ManyToMany: " + _manyToMany);
+        //System.out.println(_fieldType + " " + _fieldName + " = " + _fieldValue + " and is PrimaryKey: " + _primaryKey + ", ForeignKey: " +  _foreignKey + ", OneToMany: " + _oneToMany + " and ManyToMany: " + _manyToMany);
         for(Annotation annotation : field.getAnnotations()){
             __AnnotationData _annotationData = new __AnnotationData(annotation, field);
             _annotationList.add(_annotationData);

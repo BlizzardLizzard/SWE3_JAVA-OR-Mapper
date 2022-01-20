@@ -1,12 +1,15 @@
-import annotations.Field;
-import annotations.OneToMany;
-import annotations.PrimaryKey;
-import annotations.Table;
+package classes;
+
+import OrFramework.Orm;
+import OrFramework.annotations.Field;
+import OrFramework.annotations.OneToMany;
+import OrFramework.annotations.PrimaryKey;
+import OrFramework.annotations.Table;
 
 import java.util.ArrayList;
 
 @Table(tableName = "test")
-public class Main {
+public class Test {
     @PrimaryKey
     @Field(fieldName = "id", notNull = true, unique = true)
     public Integer id;
@@ -17,9 +20,4 @@ public class Main {
     @OneToMany(tableName = "student", foreignKeyName = "testid", classObject = Student.class)
     public ArrayList<Student> students;
 
-    public static void main(String[] args){
-        //TODO: DON'T DELETE
-        Orm.connect("jdbc:postgresql://localhost/Orm", "postgres", "passwort");
-        Orm.createTableFK(Student.class, Main.class);
-    }
 }

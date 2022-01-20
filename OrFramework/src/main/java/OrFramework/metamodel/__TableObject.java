@@ -1,5 +1,6 @@
-package metamodel;
+package OrFramework.metamodel;
 
+import OrFramework.annotations.Table;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -19,17 +20,17 @@ public class __TableObject {
 
     public __TableObject(Object obj) {
         _fields = new ArrayList<>();
-        if((obj.getClass().getAnnotation(annotations.Table.class) == null) || (obj.getClass().getAnnotation(annotations.Table.class).equals(""))){
+        if((obj.getClass().getAnnotation(Table.class) == null) || (obj.getClass().getAnnotation(Table.class).equals(""))){
             _tableName = obj.toString().replace("class", "").trim().toLowerCase(Locale.ROOT);
         } else {
-            _tableName = obj.getClass().getAnnotation(annotations.Table.class).tableName();
+            _tableName = obj.getClass().getAnnotation(Table.class).tableName();
         }
-        System.out.println("Class: " + _tableName);
+        //System.out.println("Class: " + _tableName);
         for(Field field : obj.getClass().getFields()){
             __Field _field = new __Field(field, obj);
             _fields.add(_field);
         }
-        System.out.println("--------------------------------------------------------------------------");
+        //System.out.println("--------------------------------------------------------------------------");
     }
 
     public static __Field getPkField(__TableObject _tableObject){

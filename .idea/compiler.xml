@@ -11,5 +11,10 @@
         <module name="DemoApp" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="DemoApp" target="15" />
+      <module name="OrFramework" target="15" />
+      <module name="SWE3_JAVA-OR-Mapper" target="15" />
+    </bytecodeTargetLevel>
   </component>
 </project>
