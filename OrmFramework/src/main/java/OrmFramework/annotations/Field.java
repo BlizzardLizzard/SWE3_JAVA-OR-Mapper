@@ -1,4 +1,4 @@
-package OrFramework.annotations;
+package OrmFramework.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -7,8 +7,8 @@ import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.FIELD)
-public @interface OneToMany {
-    String tableName() default "";
-    String foreignKeyName() default "";
-    Class classObject() default Void.class;
+public @interface Field {
+    String fieldName() default "";
+    boolean notNull() default false;
+    boolean unique() default false;
 }

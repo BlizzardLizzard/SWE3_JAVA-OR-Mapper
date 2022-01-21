@@ -1,9 +1,9 @@
 package classes;
 
-import OrFramework.annotations.Field;
-import OrFramework.annotations.ForeignKey;
-import OrFramework.annotations.PrimaryKey;
-import OrFramework.annotations.Table;
+import OrmFramework.annotations.Field;
+import OrmFramework.annotations.ForeignKey;
+import OrmFramework.annotations.PrimaryKey;
+import OrmFramework.annotations.Table;
 
 @Table(tableName = "student")
 public class Student {

@@ -1,6 +1,7 @@
 package showUses;
 
-import OrFramework.Orm;
+import OrmFramework.Orm;
+import classes.Student;
 import classes.Test;
 
 public class Insert {
@@ -13,6 +14,7 @@ public class Insert {
         t.test = "VTSE";
         try {
             Orm.save(t);
+            System.out.println("Saved: Test t with name: " + t.test + " and id: " + t.id);
         } catch (Exception e) {
             System.out.println("Failed to save object.");
         }

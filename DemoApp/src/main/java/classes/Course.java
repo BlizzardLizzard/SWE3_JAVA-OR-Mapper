@@ -1,9 +1,9 @@
 package classes;
 
-import OrFramework.annotations.Field;
-import OrFramework.annotations.ManyToMany;
-import OrFramework.annotations.PrimaryKey;
-import OrFramework.annotations.Table;
+import OrmFramework.annotations.Field;
+import OrmFramework.annotations.ManyToMany;
+import OrmFramework.annotations.PrimaryKey;
+import OrmFramework.annotations.Table;
 
 import java.util.ArrayList;
 

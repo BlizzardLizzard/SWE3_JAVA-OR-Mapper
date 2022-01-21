@@ -1,4 +1,4 @@
-package OrFramework.annotations;
+package OrmFramework.annotations;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
@@ -6,8 +6,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.FIELD)
-public @interface ForeignKey {
-    String fKTableName() default "";
-    Class foreignClass() default Void.class;
+@Target(ElementType.TYPE)
+public @interface Table {
+    String tableName() default "";
 }

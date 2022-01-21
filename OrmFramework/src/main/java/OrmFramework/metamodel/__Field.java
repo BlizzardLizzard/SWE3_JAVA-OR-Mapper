@@ -1,9 +1,9 @@
-package OrFramework.metamodel;
+package OrmFramework.metamodel;
 
-import OrFramework.annotations.ForeignKey;
-import OrFramework.annotations.ManyToMany;
-import OrFramework.annotations.OneToMany;
-import OrFramework.annotations.PrimaryKey;
+import OrmFramework.annotations.ForeignKey;
+import OrmFramework.annotations.ManyToMany;
+import OrmFramework.annotations.OneToMany;
+import OrmFramework.annotations.PrimaryKey;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -66,7 +66,7 @@ public class __Field {
         } catch (IllegalAccessException e) {
             e.printStackTrace();
         }
-        if(field.isAnnotationPresent(OrFramework.annotations.Field.class)){
+        if(field.isAnnotationPresent(OrmFramework.annotations.Field.class)){
             _field = true;
         }
         if(field.isAnnotationPresent(PrimaryKey.class)){

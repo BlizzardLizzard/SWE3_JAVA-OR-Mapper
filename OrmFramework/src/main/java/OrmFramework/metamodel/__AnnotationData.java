@@ -1,8 +1,8 @@
-package OrFramework.metamodel;
+package OrmFramework.metamodel;
 
-import OrFramework.annotations.ForeignKey;
-import OrFramework.annotations.ManyToMany;
-import OrFramework.annotations.OneToMany;
+import OrmFramework.annotations.ForeignKey;
+import OrmFramework.annotations.ManyToMany;
+import OrmFramework.annotations.OneToMany;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,10 +22,10 @@ public class __AnnotationData {
     public __AnnotationData(Annotation annotation, Field field) {
         _annotationPairs = new HashMap<>();
         _annotationType = annotation.annotationType();
-        if(field.isAnnotationPresent(OrFramework.annotations.Field.class)){
-            _annotationPairs.put("fieldName", field.getAnnotation(OrFramework.annotations.Field.class).fieldName());
-            _annotationPairs.put("notNull", field.getAnnotation(OrFramework.annotations.Field.class).notNull());
-            _annotationPairs.put("unique", field.getAnnotation(OrFramework.annotations.Field.class).unique());
+        if(field.isAnnotationPresent(OrmFramework.annotations.Field.class)){
+            _annotationPairs.put("fieldName", field.getAnnotation(OrmFramework.annotations.Field.class).fieldName());
+            _annotationPairs.put("notNull", field.getAnnotation(OrmFramework.annotations.Field.class).notNull());
+            _annotationPairs.put("unique", field.getAnnotation(OrmFramework.annotations.Field.class).unique());
         }
         if(field.isAnnotationPresent(ForeignKey.class)){
             _annotationPairs.put("fkTableName", field.getAnnotation(ForeignKey.class).fKTableName());

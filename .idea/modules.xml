@@ -3,7 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/DemoApp/DemoApp.iml" filepath="$PROJECT_DIR$/DemoApp/DemoApp.iml" />
-      <module fileurl="file://$PROJECT_DIR$/OrFramework/OrFramework.iml" filepath="$PROJECT_DIR$/OrFramework/OrFramework.iml" />
+      <module fileurl="file://$PROJECT_DIR$/OrmFramework/OrmFramework.iml" filepath="$PROJECT_DIR$/OrmFramework/OrmFramework.iml" />
       <module fileurl="file://$PROJECT_DIR$/.idea/SWE3_JAVA-OR-Mapper.iml" filepath="$PROJECT_DIR$/.idea/SWE3_JAVA-OR-Mapper.iml" />
     </modules>
   </component>

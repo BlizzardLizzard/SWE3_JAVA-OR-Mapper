@@ -1,4 +1,4 @@
-package OrFramework.metamodel;
+package OrmFramework.metamodel;
 
 import java.util.Iterator;
 

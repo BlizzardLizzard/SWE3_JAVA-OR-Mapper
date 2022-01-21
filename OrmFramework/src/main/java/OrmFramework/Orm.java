@@ -1,12 +1,12 @@
-package OrFramework;
+package OrmFramework;
 
-import OrFramework.annotations.ForeignKey;
-import OrFramework.annotations.ManyToMany;
-import OrFramework.annotations.OneToMany;
+import OrmFramework.annotations.ForeignKey;
+import OrmFramework.annotations.ManyToMany;
+import OrmFramework.annotations.OneToMany;
 import lombok.Getter;
 import lombok.Setter;
-import OrFramework.metamodel.__Field;
-import OrFramework.metamodel.__TableObject;
+import OrmFramework.metamodel.__Field;
+import OrmFramework.metamodel.__TableObject;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
@@ -194,10 +194,10 @@ public final class Orm {
             ResultSet result = get_connection().prepareStatement(getObjectQuery).executeQuery();
             result.next();
             for (Field field : cls.getDeclaredFields()) {
-                OrFramework.annotations.Field fieldAnnotation = field.getAnnotation(OrFramework.annotations.Field.class);
+                OrmFramework.annotations.Field fieldAnnotation = field.getAnnotation(OrmFramework.annotations.Field.class);
                 if (fieldAnnotation != null) {
                     if (field.isAnnotationPresent(ForeignKey.class)) {
-                        field.set(obj, getObject(field.getAnnotation(ForeignKey.class).foreignClass(), result.getObject(field.getAnnotation(OrFramework.annotations.Field.class).fieldName()), false));
+                        field.set(obj, getObject(field.getAnnotation(ForeignKey.class).foreignClass(), result.getObject(field.getAnnotation(OrmFramework.annotations.Field.class).fieldName()), false));
                     } else {
                         Object value = result.getObject(fieldAnnotation.fieldName());
                         field.set(obj, value);
@@ -228,7 +228,7 @@ public final class Orm {
             while (resultMany.next()) {
                 Object oneToManyObj = oneToManyCls.getConstructor().newInstance();
                 for(Field oneToManyField : oneToManyCls.getFields()){
-                    OrFramework.annotations.Field oneToManyFieldAnnotation = oneToManyField.getAnnotation(OrFramework.annotations.Field.class);
+                    OrmFramework.annotations.Field oneToManyFieldAnnotation = oneToManyField.getAnnotation(OrmFramework.annotations.Field.class);
                     if(oneToManyFieldAnnotation != null){
                         if(oneToManyField.isAnnotationPresent(ForeignKey.class)){
                             Object fkObject = getObject(oneToManyField.getAnnotation(ForeignKey.class).foreignClass(), primaryKey, false);

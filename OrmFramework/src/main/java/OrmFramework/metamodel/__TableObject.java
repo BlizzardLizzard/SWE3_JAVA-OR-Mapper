@@ -1,6 +1,6 @@
-package OrFramework.metamodel;
+package OrmFramework.metamodel;
 
-import OrFramework.annotations.Table;
+import OrmFramework.annotations.Table;
 import lombok.Getter;
 import lombok.Setter;
 
