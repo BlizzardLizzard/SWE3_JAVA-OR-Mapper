@@ -25,7 +25,7 @@ public class CreateTables {
         try {
             Orm.createTable(Course.class);
             System.out.println("Creating simple table for Course.class.");
-            Orm.createTable(Teacher.class);
+            Orm.createTableFK(Teacher.class, Test.class);
             System.out.println("Creating simple table for Teacher.class.");
             Orm.linkManyToManyTables(Teacher.class, Course.class);
             System.out.println("Creating junction table for Course.class and Teacher.class");
