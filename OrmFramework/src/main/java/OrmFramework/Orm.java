@@ -8,27 +8,41 @@ import lombok.Setter;
 import OrmFramework.metamodel.__Field;
 import OrmFramework.metamodel.__TableObject;
 
+import java.io.FileReader;
+import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.sql.*;
 import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Properties;
 
+/**
+ * This class allows access to the ORM Framework functionalities
+ */
 public final class Orm {
-    /** Get and Set Connection */
+    /** Get and Set connection */
     @Getter
     @Setter
     private static Connection _connection;
 
     /** Connects to the wanted database */
-    public static void connect (String connectionString, String username, String password){
+    public static void connect (){
         try {
-            _connection = DriverManager.getConnection(connectionString, username, password);
-        } catch (SQLException e) {
+            FileReader reader = new FileReader("db.properties");
+            Properties p = new Properties();
+            p.load(reader);
+            _connection = DriverManager.getConnection(p.getProperty("connectionString"), p.getProperty("username"), p.getProperty("password"));
+        } catch (SQLException | IOException e) {
             e.printStackTrace();
         }
     }
 
+    /**
+     * Saves an object to the database
+     * @param obj Type Object
+     */
     public static void save(Object obj){
         __TableObject _tableObject= new __TableObject(obj);
         StringBuilder insertQuery = new StringBuilder("INSERT INTO " + _tableObject.get_tableName() + " (");
@@ -84,6 +98,10 @@ public final class Orm {
         }
     }
 
+    /**
+     * Update an object in the database
+     * @param obj Type Object
+     */
     public static void update(Object obj){
         __TableObject _tableObject = new __TableObject(obj);
         StringBuilder updateQuery = new StringBuilder("UPDATE " + _tableObject.get_tableName() + " SET ");
@@ -143,6 +161,11 @@ public final class Orm {
         }
     }
 
+    /**
+     * Update a one-to-many or many-to-many object
+     * @param _field Type __Field
+     * @param obj Type Object
+     */
     private static void updateToManyList(__Field _field, Object obj){
         try {
             if(_field.get_fieldValue() != null) {
@@ -185,6 +208,13 @@ public final class Orm {
         }
     }
 
+    /**
+     * Gets object from the database
+     * @param cls Type Class
+     * @param primaryKey Type Object
+     * @param toMany Type boolean. Declares if an object has a one-to-many or many-to-many field
+     * @return Object of wanted class or else return null
+     */
     public static <T> T getObject(Class cls, Object primaryKey, boolean toMany){
         try {
             Object obj = cls.getConstructor().newInstance();
@@ -219,6 +249,12 @@ public final class Orm {
         return null;
     }
 
+    /**
+     * Gets all the fields that have the primary key as a foreign key of object
+     * @param field Type Field
+     * @param primaryKey Type Object
+     * @return Type ArrayList<Object>
+     */
     private static ArrayList<Object> getOneToManyList(Field field, Object primaryKey){
         ArrayList<Object> arrayListMany = new ArrayList<>();
         String getObjetsForObject = "SELECT * FROM " + field.getAnnotation(OneToMany.class).tableName() + " WHERE " + field.getAnnotation(OneToMany.class).foreignKeyName() + " = " + primaryKey;
@@ -240,13 +276,18 @@ public final class Orm {
                 }
                 arrayListMany.add(oneToManyObj);
             }
-            return arrayListMany;
         } catch (SQLException | IllegalAccessException | NoSuchMethodException | InvocationTargetException | InstantiationException e) {
             e.printStackTrace();
         }
-        return null;
+        return arrayListMany;
     }
 
+    /**
+     * Gets all the field for object that are mentioned in the junction table as foreign keys for object
+     * @param field Type Field
+     * @param primaryKey Type Object
+     * @return Type ArrayList<Object>
+     */
     private static ArrayList<Object> getManyToManyList(Field field, Object primaryKey){
         ArrayList<Object> arrayListMany = new ArrayList<>();
         String getIds = "SELECT * FROM " + field.getAnnotation(ManyToMany.class).manyToManyTableName() + " WHERE " + field.getAnnotation(ManyToMany.class).foreignKeyNameOwn() + " = " + primaryKey;
@@ -256,13 +297,19 @@ public final class Orm {
                 Object tmp = getObject(field.getAnnotation(ManyToMany.class).classObject(), resultMany.getObject(field.getAnnotation(ManyToMany.class).foreignKeyNameOther()).toString(), false);
                 arrayListMany.add(tmp);
             }
-            return arrayListMany;
         } catch (SQLException e) {
             e.printStackTrace();
         }
-        return null;
+        return arrayListMany;
     }
 
+    /**
+     * Sets the prepared statement according to it's type
+     * @param ps Type Prepared statement
+     * @param _field Type __Field
+     * @param index Type int
+     * @return Type int
+     */
     private static int setPsForTypeForField(PreparedStatement ps, __Field _field, int index){
         if(_field.is_field()) {
             try {
@@ -273,8 +320,11 @@ public final class Orm {
                 if(type.equals(String.class)){
                     ps.setString(index++, (String) _field.get_fieldValue());
                 }
-                if(type.equals(Boolean.class)){
+                if(type.equals(boolean.class)){
                     ps.setBoolean(index++, (Boolean) _field.get_fieldValue());
+                }
+                if(type.equals(Date.class)){
+                    ps.setDate(index++, (java.sql.Date) _field.get_fieldValue());
                 }
             } catch (SQLException e) {
                 e.printStackTrace();
@@ -283,6 +333,10 @@ public final class Orm {
         return index;
     }
 
+    /**
+     * Creates a simple table
+     * @param cls Type Class
+     */
     public static void createTable(Class cls){
         try {
             Object obj = cls.getConstructor().newInstance();
@@ -322,6 +376,11 @@ public final class Orm {
         }
     }
 
+    /**
+     * Creates a table with a foreign key
+     * @param cls Type Class
+     * @param clsFK Type Class
+     */
     public static void createTableFK(Class cls, Class clsFK){
         try {
             Object obj = cls.getConstructor().newInstance();
@@ -375,6 +434,11 @@ public final class Orm {
         }
     }
 
+    /**
+     * Creates the junction table for 2 classes with many-to-many relation
+     * @param clsOne Type Class
+     * @param clsTwo Type Class
+     */
     public static void linkManyToManyTables(Class clsOne, Class clsTwo){
         try {
             __TableObject _tableOne = new __TableObject(clsOne.getConstructor().newInstance());
@@ -395,6 +459,11 @@ public final class Orm {
         }
     }
 
+    /**
+     * Sets the type of the table rows according to type
+     * @param _field Type __Field
+     * @return Type String
+     */
     private static String changeTypeForSQL(__Field _field){
         String sqlType = "";
         if(_field.is_field()) {
@@ -405,8 +474,11 @@ public final class Orm {
             if(type.equals(String.class)){
                 sqlType = "varchar";
             }
-            if(type.equals(Boolean.class)){
+            if(type.equals(boolean.class)){
                 sqlType = "boolean";
+            }
+            if(type.equals(Date.class)){
+                sqlType = "date";
             }
         }
         return sqlType;

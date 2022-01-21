@@ -7,7 +7,6 @@ import classes.Test;
 
 public class WithManyToMany {
     public static void show(){
-        //TODO: Maybe initialise arraylists always
         System.out.println("(7) Create m:n objects and join them");
         System.out.println("-------------------------------");
 
@@ -15,8 +14,13 @@ public class WithManyToMany {
         t.id = 1;
         t.teacherName = "Dr. Acula";
         try {
+            t.test = Orm.getObject(Test.class, 1, true);
+        } catch (Exception e) {
+            System.out.println("Failed to get object.");
+        }
+        try {
             Orm.save(t);
-            System.out.println("Saved: Teacher t with name: " + t.teacherName + " and id: " + t.id);
+            System.out.println("Saved: Teacher t with name: " + t.teacherName + ", id: " + t.id + "and test with name: " + t.test.test + ", id: " + t.test.id + " created: " + t.test.creationDate);
         } catch (Exception e) {
             System.out.println("Failed to save object.");
         }

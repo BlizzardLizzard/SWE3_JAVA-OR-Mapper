@@ -1,10 +1,20 @@
 import OrmFramework.Orm;
 import showUses.*;
 
+import java.sql.SQLException;
+
+/**
+ * Sample app
+ */
 public class Program {
+
+    /**
+     * Program start for sample app
+     * @param args Command line arguments
+     */
     public static void main(String[] args) {
-        //TODO: put the info from connect into a properties file
-        Orm.connect("jdbc:postgresql://localhost/Orm", "postgres", "passwort");
+        //Please set your database info in the db.properties
+        Orm.connect();
         CreateTables.show();
         Insert.show();
         Update.show();
@@ -12,5 +22,12 @@ public class Program {
         WithOneToMany.show();
         UpdateOneToMany.show();
         WithManyToMany.show();
+
+        try {
+            Orm.get_connection().close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
     }
 }
