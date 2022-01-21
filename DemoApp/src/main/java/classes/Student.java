@@ -25,6 +25,12 @@ public class Student {
     public String name;
 
     /**
+     * Field inscribed
+     */
+    @Field(fieldName = "inscribed")
+    public boolean inscribed;
+
+    /**
      * Foreign key Test for Student
      */
     @ForeignKey(fKTableName = "test", foreignClass = Test.class)

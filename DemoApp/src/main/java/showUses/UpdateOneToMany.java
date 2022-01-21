@@ -14,10 +14,11 @@ public class UpdateOneToMany {
             Student s = new Student();
             s.id = 3;
             s.name = "Jacky";
+            s.inscribed = true;
             try {
                 s.test = Orm.getObject(Test.class, 1, true);
                 System.out.println("Getting: Test t with name: " + s.test.test + " and id: " + s.test.id);
-                System.out.println("Adding Student s with name: " + s.name + " and id: " + s.id + " to Test t with id: " + s.test.id);
+                System.out.println("Adding Student s with name: " + s.name + ", id: " + s.id + " and inscribed: " + s.inscribed + " to Test t with id: " + s.test.id);
                 t.students.add(s);
             } catch (Exception e) {
                 System.out.println("Failed to get object.");
@@ -31,7 +32,7 @@ public class UpdateOneToMany {
                 Test test = Orm.getObject(Test.class, 1, true);
                 System.out.println("Getting: Test t with name: " + test.test + " and id: " + test.id + " with students: ");
                 for(Student student : t.students){
-                    System.out.println(student.name + " id: " + student.id);
+                    System.out.println(student.name + " id: " + student.id + ", inscribed: " + s.inscribed);
                 }
             } catch (Exception e) {
                 System.out.println("Failed to get object.");

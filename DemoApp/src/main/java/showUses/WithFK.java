@@ -11,6 +11,7 @@ public class WithFK {
         Student s = new Student();
         s.id = 1;
         s.name = "Jakob";
+        s.inscribed = false;
         try {
             s.test = Orm.getObject(Test.class, 1, true);
             System.out.println("Getting: Test t with name: " + s.test.test + " and id: " + s.test.id);
@@ -19,7 +20,7 @@ public class WithFK {
         }
         try {
             Orm.save(s);
-            System.out.println("Saved: Test t with name: " + s.name + " and id: " + s.id + " with test: " + s.test.test +  " and id: " + s.test.id);
+            System.out.println("Saved: Test t with name: " + s.name + ", id: " + s.id + " and inscribed: " + s.inscribed + " with test: " + s.test.test +  " and id: " + s.test.id);
         } catch (Exception e) {
             System.out.println("Failed to save object.");
         }
