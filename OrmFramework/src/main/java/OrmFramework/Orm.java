@@ -14,9 +14,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Type;
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Properties;
+import java.sql.Date;
+import java.util.*;
 
 /**
  * This class allows access to the ORM Framework functionalities
@@ -334,65 +333,22 @@ public final class Orm {
     }
 
     /**
-     * Creates a simple table
+     * Creates a table with a foreign key
      * @param cls Type Class
      */
     public static void createTable(Class cls){
         try {
             Object obj = cls.getConstructor().newInstance();
             __TableObject _table = new __TableObject(obj);
-            __Field _pkField = null;
-            StringBuilder createQuery = new StringBuilder("CREATE TABLE " + _table.get_tableName() + " (");
-            boolean firstItem = true;
-            for(__Field _field : _table.get_fields()){
-                if(_field.is_field()) {
-                    if(_field.is_primaryKey()){
-                        _pkField = _field;
-                    }
-                    if (firstItem) {
-                        firstItem = false;
-                    } else {
-                        createQuery.append(", ");
-                    }
-                    createQuery.append(__Field.getAnnotationFieldValue(_field, "fieldName")).append(" ").append(changeTypeForSQL(_field));
-                    if ((boolean) __Field.getAnnotationFieldValue(_field, "notNull")) {
-                        createQuery.append(" NOT NULL");
-                    }
-                    if ((boolean) __Field.getAnnotationFieldValue(_field, "unique")) {
-                        createQuery.append(" UNIQUE");
-                    }
-
-                }
-            }
-            if(_pkField != null){
-                createQuery.append(", PRIMARY KEY (" + __Field.getAnnotationFieldValue(_pkField, "fieldName") + ")");
-            }
-            createQuery.append(")");
-            PreparedStatement ps = get_connection().prepareStatement(createQuery.toString());
-            ps.execute();
-            ps.close();
-        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | SQLException |NoSuchMethodException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
-     * Creates a table with a foreign key
-     * @param cls Type Class
-     * @param clsFK Type Class
-     */
-    public static void createTableFK(Class cls, Class clsFK){
-        try {
-            Object obj = cls.getConstructor().newInstance();
-            __TableObject _table = new __TableObject(obj);
             __Field _pkField = __TableObject.getPkField(_table);
-            __Field _fkField = null;
+            ArrayList<__Field> _fkFields = new ArrayList<>();
             StringBuilder createQuery = new StringBuilder("CREATE TABLE " + _table.get_tableName() + " (");
             boolean firstItem = true;
+            int fkIndex = 0;
             for(__Field _field : _table.get_fields()){
                 if(_field.is_field()) {
                     if(_field.is_foreignKey()){
-                        _fkField = _field;
+                        _fkFields.add(_field);
                     }
                     if (firstItem) {
                         firstItem = false;
@@ -400,10 +356,12 @@ public final class Orm {
                         createQuery.append(", ");
                     }
                     if(_field.is_foreignKey()){
+                        Class clsFK = (Class) _fkFields.get(fkIndex).get_fieldType();
                         Object objFK = clsFK.getConstructor().newInstance();
                         __TableObject _tableFK = new __TableObject(objFK);
                         __Field _fkFieldId = __TableObject.getPkField(_tableFK);
                         createQuery.append(__Field.getAnnotationFieldValue(_field, "fieldName")).append(" ").append(changeTypeForSQL(_fkFieldId));
+                        fkIndex++;
                     } else {
                         createQuery.append(__Field.getAnnotationFieldValue(_field, "fieldName")).append(" ").append(changeTypeForSQL(_field));
                     }
@@ -418,7 +376,8 @@ public final class Orm {
             if(_pkField != null){
                 createQuery.append(", PRIMARY KEY (" + __Field.getAnnotationFieldValue(_pkField, "fieldName") + ")");
             }
-            if(_fkField != null){
+            for(__Field _fkField : _fkFields) {
+                Class clsFK = (Class) _fkField.get_fieldType();
                 Object objFK = clsFK.getConstructor().newInstance();
                 __TableObject _tableFK = new __TableObject(objFK);
                 __Field _fkFieldId = __TableObject.getPkField(_tableFK);

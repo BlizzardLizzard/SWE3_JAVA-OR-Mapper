@@ -17,7 +17,7 @@ public class CreateTables {
             System.out.println("Failed to save simple table.");
         }
         try {
-            Orm.createTableFK(Student.class, Test.class);
+            Orm.createTable(Student.class);
             System.out.println("Creating table with foreign key Test.class for Student.class.");
         } catch (Exception e) {
             System.out.println("Failed to save table with foreign key.");
@@ -25,7 +25,7 @@ public class CreateTables {
         try {
             Orm.createTable(Course.class);
             System.out.println("Creating simple table for Course.class.");
-            Orm.createTableFK(Teacher.class, Test.class);
+            Orm.createTable(Teacher.class);
             System.out.println("Creating simple table for Teacher.class.");
             Orm.linkManyToManyTables(Teacher.class, Course.class);
             System.out.println("Creating junction table for Course.class and Teacher.class");

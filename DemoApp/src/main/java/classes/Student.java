@@ -36,4 +36,5 @@ public class Student {
     @ForeignKey(fKTableName = "test", foreignClass = Test.class)
     @Field(fieldName = "testid")
     public Test test;
+
 }

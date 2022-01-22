@@ -1,4 +1,6 @@
 import OrmFramework.Orm;
+import classes.Student;
+import classes.Test;
 import showUses.*;
 
 import java.sql.SQLException;
