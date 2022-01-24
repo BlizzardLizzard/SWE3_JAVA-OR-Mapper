@@ -16,13 +16,8 @@ public class WithManyToMany {
         t.id = 1;
         t.teacherName = "Dr. Acula";
         try {
-            t.test = Orm.getObject(Test.class, 1, true);
-        } catch (Exception e) {
-            System.out.println("Failed to get object.");
-        }
-        try {
             Orm.save(t);
-            System.out.println("Saved: Teacher t with name: " + t.teacherName + ", id: " + t.id + "and test with name: " + t.test.test + ", id: " + t.test.id + " created: " + t.test.creationDate);
+            System.out.println("Saved: Teacher t with name: " + t.teacherName + ", id: " + t.id);
         } catch (Exception e) {
             System.out.println("Failed to save object.");
         }

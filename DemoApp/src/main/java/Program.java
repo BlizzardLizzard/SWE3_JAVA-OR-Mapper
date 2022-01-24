@@ -1,6 +1,8 @@
 import OrmFramework.Orm;
 import OrmFramework.queryEnums.QueryComparison;
+import classes.Course;
 import classes.Student;
+import classes.Test;
 import showUses.*;
 
 import java.sql.SQLException;
@@ -26,6 +28,10 @@ public class Program {
         UpdateOneToMany.show();
         WithManyToMany.show();
         WithQuery.show();
+
+        Delete.show();
+
+
 
         try {
             Orm.get_connection().close();

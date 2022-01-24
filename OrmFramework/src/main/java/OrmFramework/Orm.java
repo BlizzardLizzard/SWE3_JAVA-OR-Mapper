@@ -304,6 +304,56 @@ public final class Orm {
     }
 
     /**
+     * Deletes all rows that have the same value as the column from the object declared
+     * @param obj Type Object
+     * @param column Type String
+     */
+    public static void delete(Object obj, String column) {
+        __TableObject _table = new __TableObject(obj);
+        __Field _deleteField = null;
+        String deleteItem = "DELETE FROM " + _table.get_tableName() + " WHERE ";
+        for (__Field _field : _table.get_fields()) {
+            if (_field.is_manyToMany()) {
+                String deleteJunction = "DELETE FROM " + __Field.getAnnotationFieldValue(_field, "manyToManyTableName") + " WHERE " + __Field.getAnnotationFieldValue(_field, "foreignKeyNameOwn") + " = ?";
+                try {
+                    PreparedStatement manyPs = get_connection().prepareStatement(deleteJunction);
+                    setPsForTypeForField(manyPs, __TableObject.getPkField(_table), 1);
+                    manyPs.executeUpdate();
+                    manyPs.executeUpdate();
+                    manyPs.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+            if (_field.is_oneToMany()) {
+                String updateFkItems = "UPDATE " + __Field.getAnnotationFieldValue(_field, "tableName") + " SET " + __Field.getAnnotationFieldValue(_field, "foreignKeyName").toString() + " = ? WHERE " + __Field.getAnnotationFieldValue(_field, "foreignKeyName").toString() + " = ?";
+                try {
+                    System.out.println(updateFkItems);
+                    PreparedStatement fkPs = get_connection().prepareStatement(updateFkItems);
+                    fkPs.setObject(1, null);
+                    setPsForTypeForField(fkPs, __TableObject.getPkField(_table), 2);
+                    fkPs.execute();
+                    fkPs.close();
+                } catch (SQLException e) {
+                    e.printStackTrace();
+                }
+            }
+                if (_field.get_fieldName().equals(column)) {
+                    _deleteField = _field;
+                    deleteItem += _field.get_fieldName() + " = ?";
+                }
+            }
+        try {
+            PreparedStatement ps = get_connection().prepareStatement(deleteItem);
+            setPsForTypeForField(ps, _deleteField, 1);
+            ps.execute();
+            ps.close();
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
      * Sets the prepared statement according to it's type
      * @param ps Type Prepared statement
      * @param _field Type __Field

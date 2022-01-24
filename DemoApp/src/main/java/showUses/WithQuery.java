@@ -77,7 +77,7 @@ public class WithQuery {
             for(Course c : course){
                 System.out.println("Course: " + c.courseName + " with id: " + c.id + " and Teachers: ");
                 for(Teacher t : c.teachers){
-                    System.out.println("Teacher: " + t.teacherName + " with id: " + t.id + " with test: " + t.test.test);
+                    System.out.println("Teacher: " + t.teacherName + " with id: " + t.id);
                 }
             }
         } catch (Exception e){

@@ -28,11 +28,4 @@ public class Teacher {
          */
         @ManyToMany(tableName = "courses", foreignKeyNameOwn = "teacherid", foreignKeyNameOther = "courseid", classObject = Course.class, manyToManyTableName = "teacher_course")
         public ArrayList<Course> courses;
-
-        /**
-         * Foreign key Test for Teacher
-         */
-        @Field(fieldName = "testid", notNull = true)
-        @ForeignKey(fKTableName = "test", foreignClass = Test.class)
-        public Test test;
 }

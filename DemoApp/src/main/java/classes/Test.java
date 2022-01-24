@@ -38,5 +38,4 @@ public class Test {
      */
     @OneToMany(tableName = "student", foreignKeyName = "testid", classObject = Student.class)
     public ArrayList<Student> students;
-
 }
