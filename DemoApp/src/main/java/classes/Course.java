@@ -29,6 +29,6 @@ public class Course {
     /**
      * Many-To-Many Teachers for Course
      */
-    @ManyToMany(tableName = "teachers", foreignKeyNameOwn = "courseid", foreignKeyNameOther = "teacherid",classObject = Teacher.class, manyToManyTableName = "teacher_course")
+    @ManyToMany(tableName = "teachers", foreignKeyNameOwn = "courseid", foreignKeyNameOther = "teacherid", classObject = Teacher.class, manyToManyTableName = "teacher_course")
     public ArrayList<Teacher> teachers;
 }
