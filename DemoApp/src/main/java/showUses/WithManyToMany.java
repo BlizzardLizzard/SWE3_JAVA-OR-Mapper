@@ -5,6 +5,8 @@ import classes.Course;
 import classes.Teacher;
 import classes.Test;
 
+import java.util.ArrayList;
+
 public class WithManyToMany {
     public static void show(){
         System.out.println("(7) Create m:n objects and join them");
@@ -33,18 +35,18 @@ public class WithManyToMany {
         } catch (Exception e) {
             System.out.println("Failed to save object.");
         }
-        Teacher teacher = Orm.getObject(Teacher.class, 1, true);
+        t.courses = new ArrayList<>();
         System.out.println("Adding Course c with name: " + c.courseName + " and id: " + c.id + " to Teacher t with id: " + t.id);
         try {
-            teacher.courses.add(Orm.getObject(Course.class, 1, true));
+            t.courses.add(Orm.getObject(Course.class, 1, true));
         } catch (Exception e) {
             System.out.println("Failed to get object.");
         }
 
         try {
-            Orm.update(teacher);
+            Orm.update(t);
             System.out.println("Relation Teacher with Course successful: ");
-            for(Course course : teacher.courses){
+            for(Course course : t.courses){
                 System.out.println("Id: " + course.id + " and name: " + course.courseName);
             }
         } catch (Exception u) {

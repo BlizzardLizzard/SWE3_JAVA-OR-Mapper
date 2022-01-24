@@ -11,7 +11,8 @@ public class WithFK {
         Student s = new Student();
         s.id = 1;
         s.name = "Jakob";
-        s.inscribed = false;
+        s.inscribed = true;
+
         try {
             s.test = Orm.getObject(Test.class, 1, true);
             System.out.println("Getting: Test t with name: " + s.test.test + " and id: " + s.test.id);

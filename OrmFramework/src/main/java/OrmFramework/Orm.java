@@ -3,6 +3,7 @@ package OrmFramework;
 import OrmFramework.annotations.ForeignKey;
 import OrmFramework.annotations.ManyToMany;
 import OrmFramework.annotations.OneToMany;
+import OrmFramework.metamodel.__Query;
 import lombok.Getter;
 import lombok.Setter;
 import OrmFramework.metamodel.__Field;
@@ -342,7 +343,7 @@ public final class Orm {
             __TableObject _table = new __TableObject(obj);
             __Field _pkField = __TableObject.getPkField(_table);
             ArrayList<__Field> _fkFields = new ArrayList<>();
-            StringBuilder createQuery = new StringBuilder("CREATE TABLE " + _table.get_tableName() + " (");
+            StringBuilder createQuery = new StringBuilder("CREATE TABLE IF NOT EXISTS " + _table.get_tableName() + " (");
             boolean firstItem = true;
             int fkIndex = 0;
             for(__Field _field : _table.get_fields()){
@@ -410,7 +411,7 @@ public final class Orm {
                     _manyToManyField = _field;
                 }
             }
-            String linkManyToMany = "CREATE TABLE " + __Field.getAnnotationFieldValue(_manyToManyField, "manyToManyTableName") + " (" + __Field.getAnnotationFieldValue(_manyToManyField, "foreignKeyNameOwn") + " " + changeTypeForSQL(_primaryKeyOne) + ", " + __Field.getAnnotationFieldValue(_manyToManyField, "foreignKeyNameOther") + " " + changeTypeForSQL(_primaryKeyTwo) + ", FOREIGN KEY (" + __Field.getAnnotationFieldValue(_manyToManyField, "foreignKeyNameOwn") + ") REFERENCES " + _tableOne.get_tableName() + " (" + __Field.getAnnotationFieldValue(_primaryKeyOne, "fieldName") + ")";
+            String linkManyToMany = "CREATE TABLE IF NOT EXISTS " + __Field.getAnnotationFieldValue(_manyToManyField, "manyToManyTableName") + " (" + __Field.getAnnotationFieldValue(_manyToManyField, "foreignKeyNameOwn") + " " + changeTypeForSQL(_primaryKeyOne) + ", " + __Field.getAnnotationFieldValue(_manyToManyField, "foreignKeyNameOther") + " " + changeTypeForSQL(_primaryKeyTwo) + ", FOREIGN KEY (" + __Field.getAnnotationFieldValue(_manyToManyField, "foreignKeyNameOwn") + ") REFERENCES " + _tableOne.get_tableName() + " (" + __Field.getAnnotationFieldValue(_primaryKeyOne, "fieldName") + ")";
             linkManyToMany += ", FOREIGN KEY (" + __Field.getAnnotationFieldValue(_manyToManyField, "foreignKeyNameOther") + ") REFERENCES " + _tableTwo.get_tableName() + " (" + __Field.getAnnotationFieldValue(_primaryKeyTwo, "fieldName") + "))";
             get_connection().prepareStatement(linkManyToMany).execute();
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException | SQLException e) {
@@ -441,5 +442,50 @@ public final class Orm {
             }
         }
         return sqlType;
+    }
+
+    /**
+     * Creates a new __Query object to operate the custom queries
+     * @return Type new __Query
+     */
+    public static __Query query() {
+        return new __Query();
+    }
+
+    /**
+     * Takes the query string and transforms the result set into corresponding objects from the given class
+     * @param _query Type __Query
+     */
+    public static void executeQuery(__Query _query){
+        try {
+            ResultSet rs = get_connection().prepareStatement(_query.getQueryString().toString()).executeQuery();
+            while (rs.next()) {
+                Object tmp = _query.getCls().getConstructor().newInstance();
+                for (Field field : _query.getCls().getDeclaredFields()) {
+                    OrmFramework.annotations.Field fieldAnnotation = field.getAnnotation(OrmFramework.annotations.Field.class);
+                    if (fieldAnnotation != null) {
+                        if (field.isAnnotationPresent(ForeignKey.class)) {
+                            field.set(tmp, getObject(field.getAnnotation(ForeignKey.class).foreignClass(), rs.getObject(field.getAnnotation(OrmFramework.annotations.Field.class).fieldName()), false));
+                        } else {
+                            Object value = rs.getObject(fieldAnnotation.fieldName());
+                            field.set(tmp, value);
+                        }
+                    }
+                    if(field.isAnnotationPresent(OrmFramework.annotations.OneToMany.class)){
+                        __TableObject _table = new __TableObject(tmp);
+                        ArrayList<Object> oneToManyList = getOneToManyList(field, __TableObject.getPkField(_table).get_fieldValue());
+                        field.set(tmp, oneToManyList);
+                    }
+                    if(field.isAnnotationPresent(OrmFramework.annotations.ManyToMany.class)){
+                        __TableObject _table = new __TableObject(tmp);
+                        ArrayList<Object> oneToManyList = getManyToManyList(field, __TableObject.getPkField(_table).get_fieldValue());
+                        field.set(tmp, oneToManyList);
+                    }
+                }
+                _query.getObjectList().add(tmp);
+            }
+        } catch (SQLException | NoSuchMethodException | InstantiationException | IllegalAccessException | InvocationTargetException e) {
+            e.printStackTrace();
+        }
     }
 }
